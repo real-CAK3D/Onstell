@@ -1,0 +1,69 @@
+{
+  "application": "Onstell",
+  "repository": "real-CAK3D/Onstell",
+  "releaseAssets": [
+    {
+      "name": "Onstell-Setup-Windows-x64.exe",
+      "platform": "windows",
+      "architecture": "x64",
+      "kind": "installer",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-Windows-x64.msi",
+      "platform": "windows",
+      "architecture": "x64",
+      "kind": "installer",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-Windows-Portable-x64.zip",
+      "platform": "windows",
+      "architecture": "x64",
+      "kind": "portable",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-Linux-x64.AppImage",
+      "platform": "linux",
+      "architecture": "x64",
+      "kind": "portable",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-Linux-x64.deb",
+      "platform": "linux",
+      "architecture": "x64",
+      "kind": "package",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-RaspberryPi-arm64.deb",
+      "platform": "linux",
+      "architecture": "arm64",
+      "kind": "package",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-Linux-arm64.AppImage",
+      "platform": "linux",
+      "architecture": "arm64",
+      "kind": "portable",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-macOS-universal.dmg",
+      "platform": "macos",
+      "architecture": "universal",
+      "kind": "installer",
+      "status": "planned"
+    },
+    {
+      "name": "Onstell-macOS-universal.zip",
+      "platform": "macos",
+      "architecture": "universal",
+      "kind": "portable",
+      "status": "planned"
+    }
+  ]
+}

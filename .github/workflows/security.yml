@@ -1,0 +1,22 @@
+name: Security
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "17 9 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  basic-secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for obvious private key material
+        run: |
+          ! grep -R "BEGIN .*PRIVATE KEY" -n README.md INSTALL.md BUILDING.md RELEASING.md SECURITY.md CONTRIBUTING.md CHANGELOG.md prototype scripts docs
+          ! grep -R "GITHUB_""TOKEN=" -n README.md INSTALL.md BUILDING.md RELEASING.md SECURITY.md CONTRIBUTING.md CHANGELOG.md prototype scripts docs
