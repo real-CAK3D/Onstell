@@ -60,6 +60,8 @@ RELEASE-NOTES.md
 
 See [INSTALL.md](INSTALL.md), [BUILDING.md](BUILDING.md), and [RELEASING.md](RELEASING.md).
 
+The wiki source is maintained in [docs/wiki](docs/wiki). It can be mirrored into the GitHub Wiki when wiki publishing is enabled for the repository.
+
 ## Safety
 
 Onstell will eventually capture and forward keyboard and pointer input. That makes pairing, authentication, local network trust, emergency release shortcuts, and clear permissions essential.
@@ -76,4 +78,3 @@ Likely stack:
 - Rust for native input, networking, and platform integration.
 - TypeScript for the widget UI.
 - GitHub Releases for public installers.
-

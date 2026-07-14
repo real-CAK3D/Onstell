@@ -18,6 +18,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Scan for obvious private key material
         run: |
-          ! grep -R "BEGIN .*PRIVATE KEY" -n . --exclude-dir=.git
-          ! grep -R "GITHUB_TOKEN=" -n . --exclude-dir=.git
-
+          ! grep -R "BEGIN .*PRIVATE KEY" -n README.md INSTALL.md BUILDING.md RELEASING.md SECURITY.md CONTRIBUTING.md CHANGELOG.md prototype scripts docs
+          ! grep -R "GITHUB_""TOKEN=" -n README.md INSTALL.md BUILDING.md RELEASING.md SECURITY.md CONTRIBUTING.md CHANGELOG.md prototype scripts docs

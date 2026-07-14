@@ -30,6 +30,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            CHANNEL="${{ inputs.channel }}"
+            PUBLISH="${{ inputs.publish }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+            CHANNEL="stable"
+            PUBLISH="true"
+            if [[ "$VERSION" == *"-beta."* ]]; then CHANNEL="beta"; fi
+            if [[ "$VERSION" == *"-nightly"* ]]; then CHANNEL="nightly"; fi
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
       - name: Show planned release assets
         run: |
           mkdir -p dist
@@ -38,6 +56,7 @@ jobs:
 
           Native builds are not wired yet. Do not publish this as a production release.
           NOTES
+          cp packaging/release-assets.json dist/release-assets.json
           cat > dist/SHA256SUMS.txt <<'SUMS'
           Native release assets are pending implementation.
           SUMS
@@ -46,4 +65,16 @@ jobs:
         with:
           name: onstell-release-plan
           path: dist/*
-
+      - name: Create draft GitHub Release
+        if: steps.meta.outputs.publish == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.version }}
+          name: Onstell ${{ steps.meta.outputs.version }}
+          body_path: dist/RELEASE-NOTES.md
+          draft: true
+          prerelease: ${{ steps.meta.outputs.channel != 'stable' }}
+          files: |
+            dist/RELEASE-NOTES.md
+            dist/SHA256SUMS.txt
+            dist/release-assets.json
