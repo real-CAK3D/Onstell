@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-and-prototype:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required files
+        run: |
+          test -f README.md
+          test -f INSTALL.md
+          test -f BUILDING.md
+          test -f RELEASING.md
+          test -f SECURITY.md
+          test -f CONTRIBUTING.md
+          test -f CHANGELOG.md
+          test -f prototype/onstell-widget.html
+      - name: Check Onstell naming
+        run: |
+          ! grep -R "Pointer""Bridge" -n README.md INSTALL.md BUILDING.md RELEASING.md SECURITY.md CONTRIBUTING.md CHANGELOG.md prototype scripts

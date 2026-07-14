@@ -1,0 +1,23 @@
+name: Security
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "17 9 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  basic-secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for obvious private key material
+        run: |
+          ! grep -R "BEGIN .*PRIVATE KEY" -n . --exclude-dir=.git
+          ! grep -R "GITHUB_TOKEN=" -n . --exclude-dir=.git
+

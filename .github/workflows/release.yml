@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to prepare
+        required: true
+      channel:
+        description: Release channel
+        type: choice
+        options:
+          - stable
+          - beta
+          - nightly
+        default: beta
+      publish:
+        description: Publish GitHub Release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show planned release assets
+        run: |
+          mkdir -p dist
+          cat > dist/RELEASE-NOTES.md <<'NOTES'
+          Onstell release workflow placeholder.
+
+          Native builds are not wired yet. Do not publish this as a production release.
+          NOTES
+          cat > dist/SHA256SUMS.txt <<'SUMS'
+          Native release assets are pending implementation.
+          SUMS
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onstell-release-plan
+          path: dist/*
+
