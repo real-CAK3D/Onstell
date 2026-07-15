@@ -8,14 +8,14 @@ The first target is **Device Desktop mode**. In this mode, Onstell shares pointe
 
 ## Current Status
 
-This repository is at milestone 0:
+This repository has a first native development release:
 
 - Onstell branding and repository structure.
 - Hi-fi glass floating widget prototype.
 - Tauri desktop-shell scaffold for the first native widget build.
-- Documented release and installer plan.
-- GitHub workflow skeletons for CI, release, and security checks.
-- Install scripts that are ready to connect to real release assets once binaries exist.
+- GitHub Actions builds for Windows, macOS, and Linux x64.
+- Draft development release packages for smoke testing the desktop shell.
+- Documented release, installer, wiki, and roadmap plan.
 
 The real low-level KVM backend, input routing, pairing, and signed installers are not implemented yet.
 
@@ -66,7 +66,7 @@ SHA256SUMS.txt
 RELEASE-NOTES.md
 ```
 
-See [INSTALL.md](INSTALL.md), [BUILDING.md](BUILDING.md), and [RELEASING.md](RELEASING.md).
+See [INSTALL.md](INSTALL.md), [BUILDING.md](BUILDING.md), [RELEASING.md](RELEASING.md), and [docs/ISSUE_ROADMAP.md](docs/ISSUE_ROADMAP.md).
 
 The wiki source is maintained in [docs/wiki](docs/wiki). It can be mirrored into the GitHub Wiki when wiki publishing is enabled for the repository.
 
