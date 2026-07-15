@@ -1,11 +1,8 @@
 use serde::Serialize;
 use tauri::{
-    AppHandle,
-    Emitter,
     menu::{Menu, MenuItem},
-    PhysicalPosition,
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    AppHandle, Emitter, Manager, PhysicalPosition,
 };
 
 #[derive(Serialize)]
@@ -84,7 +81,8 @@ pub fn run() {
         .setup(|app| {
             let show = MenuItem::with_id(app, "show", "Show floating widget", true, None::<&str>)?;
             let hide = MenuItem::with_id(app, "hide", "Hide floating widget", true, None::<&str>)?;
-            let reset = MenuItem::with_id(app, "reset", "Reset widget position", true, None::<&str>)?;
+            let reset =
+                MenuItem::with_id(app, "reset", "Reset widget position", true, None::<&str>)?;
             let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit Onstell", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &hide, &reset, &settings, &quit])?;
@@ -95,19 +93,19 @@ pub fn run() {
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "show" => {
                         let _ = show_main_window(app);
-                    },
+                    }
                     "hide" => {
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.hide();
                         }
-                    },
+                    }
                     "reset" => {
                         let _ = reset_main_window_position(app);
-                    },
+                    }
                     "settings" => {
                         let _ = show_main_window(app);
                         let _ = app.emit("onstell://open-settings", ());
-                    },
+                    }
                     "quit" => app.exit(0),
                     _ => {}
                 })
