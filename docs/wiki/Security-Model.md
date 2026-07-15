@@ -17,6 +17,8 @@ See [Pairing and Trust](Pairing-and-Trust) for the current placeholder state mod
 
 See [Input Forwarding Architecture](Input-Forwarding-Architecture) for controller/follower roles, pointer edge transfer, keyboard routing, emergency release behavior, and OS permission requirements.
 
+See [Clipboard Sync Design](Clipboard-Sync-Design) for clipboard opt-in behavior, payload limits, and privacy rules.
+
 ## Trust States
 
 - Local: this machine.
@@ -26,6 +28,8 @@ See [Input Forwarding Architecture](Input-Forwarding-Architecture) for controlle
 - Blocked: explicitly denied until the user changes it.
 
 Input, clipboard, and file-transfer features must only target trusted devices.
+
+Clipboard sync is off by default and must not read, store, log, or transmit clipboard payloads until the user explicitly enables it for a trusted session.
 
 ## Emergency Release
 

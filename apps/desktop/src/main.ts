@@ -43,6 +43,7 @@ type OnstellStatus = {
   latencyMs: number | null;
   seamlessEnabled: boolean;
   connected: boolean;
+  clipboardSync: string;
 };
 
 const defaultSettings: Readonly<WidgetSettings> = {
@@ -61,7 +62,8 @@ const fallbackStatus: OnstellStatus = {
   activeMonitor: "Display 1",
   latencyMs: 3,
   seamlessEnabled: true,
-  connected: false
+  connected: false,
+  clipboardSync: "Design only"
 };
 
 const settingsKey = "onstell.widget.settings";
@@ -152,6 +154,7 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
           <article><span>Profile</span><strong>${escapeHtml(profile.name)}</strong></article>
           <article><span>Latency</span><strong>${status.latencyMs === null ? "N/A" : `${status.latencyMs} ms`}</strong></article>
           <article><span>Layer</span><strong data-layer-label>${labelForLayer(settings.layerMode)}</strong></article>
+          <article data-metric="clipboard"><span>Clipboard</span><strong>${escapeHtml(status.clipboardSync)}</strong></article>
         </div>
 
         <div class="settings-panel" role="dialog" aria-label="Quick widget settings">

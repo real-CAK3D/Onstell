@@ -14,6 +14,7 @@ struct OnstellStatus {
     latency_ms: Option<u16>,
     seamless_enabled: bool,
     connected: bool,
+    clipboard_sync: String,
 }
 
 #[tauri::command]
@@ -25,6 +26,7 @@ fn get_status() -> OnstellStatus {
         latency_ms: Some(3),
         seamless_enabled: true,
         connected: false,
+        clipboard_sync: "Design only".to_string(),
     }
 }
 

@@ -10,6 +10,7 @@ These pages can be copied or pushed into the repository wiki:
 - Device Desktop Mode
 - Pairing and Trust
 - Input Forwarding Architecture
+- Clipboard Sync Design
 - Virtual Monitor Mode
 - Release and Packages
 - Security Model

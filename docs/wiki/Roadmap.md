@@ -34,6 +34,8 @@
 
 See [Input Forwarding Architecture](Input-Forwarding-Architecture) before implementing capture, injection, or routing.
 
+See [Clipboard Sync Design](Clipboard-Sync-Design) before implementing clipboard read, write, watch, or transfer behavior.
+
 ## Milestone 4: Release Installers
 
 - Windows installer and portable ZIP.
