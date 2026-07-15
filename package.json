@@ -1,0 +1,20 @@
+{
+  "name": "onstell-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Onstell cross-platform software KVM workspace.",
+  "workspaces": [
+    "apps/desktop"
+  ],
+  "scripts": {
+    "dev": "npm --workspace apps/desktop run dev",
+    "build": "npm --workspace apps/desktop run build",
+    "tauri:dev": "npm --workspace apps/desktop run tauri:dev",
+    "tauri:build": "npm --workspace apps/desktop run tauri:build",
+    "check": "npm --workspace apps/desktop run check"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

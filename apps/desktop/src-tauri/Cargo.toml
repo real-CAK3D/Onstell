@@ -1,0 +1,19 @@
+[package]
+name = "onstell"
+version = "0.1.0"
+description = "Onstell desktop shell"
+authors = ["CAK3D + Codex"]
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "onstell_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = ["tray-icon"] }
+

@@ -10,7 +10,7 @@
 
 ## Milestone 1: Native Shell
 
-- Tauri app scaffold.
+- Tauri app scaffold. Started.
 - Tray or menu-bar icon.
 - Floating widget window.
 - Single-instance behavior.
@@ -43,4 +43,3 @@
 ## Later: Virtual Monitor Mode
 
 Virtual Monitor mode should wait until Device Desktop mode is stable.
-

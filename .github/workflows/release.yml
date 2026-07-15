@@ -26,8 +26,70 @@ permissions:
   contents: write
 
 jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run build
+      - run: npm run tauri:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onstell-windows-dev
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/**/*
+
+  build-linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Tauri Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: npm ci
+      - run: npm run build
+      - run: npm run tauri:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onstell-linux-x64-dev
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/**/*
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run build
+      - run: npm run tauri:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onstell-macos-dev
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/**/*
+
   release-plan:
     runs-on: ubuntu-latest
+    needs:
+      - build-windows
+      - build-linux-x64
+      - build-macos
     steps:
       - uses: actions/checkout@v4
       - name: Resolve release metadata
@@ -65,6 +127,9 @@ jobs:
         with:
           name: onstell-release-plan
           path: dist/*
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
       - name: Create draft GitHub Release
         if: steps.meta.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
@@ -78,3 +143,4 @@ jobs:
             dist/RELEASE-NOTES.md
             dist/SHA256SUMS.txt
             dist/release-assets.json
+            release-artifacts/**/*

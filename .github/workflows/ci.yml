@@ -10,10 +10,19 @@ permissions:
   contents: read
 
 jobs:
-  docs-and-prototype:
+  docs-frontend-and-tauri:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Tauri Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
       - name: Validate required files
         run: |
           test -f README.md
@@ -24,6 +33,19 @@ jobs:
           test -f CONTRIBUTING.md
           test -f CHANGELOG.md
           test -f prototype/onstell-widget.html
+          test -f apps/desktop/src-tauri/tauri.conf.json
       - name: Check Onstell naming
         run: |
-          ! grep -R "Pointer""Bridge" -n README.md INSTALL.md BUILDING.md RELEASING.md SECURITY.md CONTRIBUTING.md CHANGELOG.md prototype scripts
+          ! grep -R "Pointer""Bridge" -n README.md INSTALL.md BUILDING.md RELEASING.md SECURITY.md CONTRIBUTING.md CHANGELOG.md prototype scripts docs apps packaging
+      - name: Install JavaScript dependencies
+        run: npm ci
+      - name: Type-check desktop UI
+        run: npm run check
+      - name: Build desktop UI
+        run: npm run build
+      - name: Check Rust formatting
+        working-directory: apps/desktop/src-tauri
+        run: cargo fmt --check
+      - name: Check Rust shell
+        working-directory: apps/desktop/src-tauri
+        run: cargo check
