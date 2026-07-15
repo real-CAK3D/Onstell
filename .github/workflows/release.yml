@@ -114,14 +114,13 @@ jobs:
         run: |
           mkdir -p dist
           cat > dist/RELEASE-NOTES.md <<'NOTES'
-          Onstell release workflow placeholder.
+          # Onstell development release
 
-          Native builds are not wired yet. Do not publish this as a production release.
+          This is an early development release for smoke testing the native Onstell desktop shell.
+
+          The widget UI is present, while cross-platform KVM transport and pairing are still planned work.
           NOTES
           cp packaging/release-assets.json dist/release-assets.json
-          cat > dist/SHA256SUMS.txt <<'SUMS'
-          Native release assets are pending implementation.
-          SUMS
           ls -la dist
       - uses: actions/upload-artifact@v4
         with:
@@ -130,6 +129,20 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: release-artifacts
+      - name: Stage release package files
+        shell: bash
+        run: |
+          mkdir -p dist/assets
+          find release-artifacts -type f \( \
+            -name "*.exe" -o \
+            -name "*.msi" -o \
+            -name "*.dmg" -o \
+            -name "*.AppImage" -o \
+            -name "*.deb" -o \
+            -name "*.rpm" \
+          \) -print -exec cp {} dist/assets/ \;
+          (cd dist && sha256sum assets/* > SHA256SUMS.txt)
+          ls -la dist dist/assets
       - name: Create draft GitHub Release
         if: steps.meta.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
@@ -143,4 +156,4 @@ jobs:
             dist/RELEASE-NOTES.md
             dist/SHA256SUMS.txt
             dist/release-assets.json
-            release-artifacts/**/*
+            dist/assets/*
