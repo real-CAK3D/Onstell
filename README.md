@@ -12,11 +12,12 @@ This repository is at milestone 0:
 
 - Onstell branding and repository structure.
 - Hi-fi glass floating widget prototype.
+- Tauri desktop-shell scaffold for the first native widget build.
 - Documented release and installer plan.
 - GitHub workflow skeletons for CI, release, and security checks.
 - Install scripts that are ready to connect to real release assets once binaries exist.
 
-The real low-level KVM backend, native tray app, input routing, pairing, and signed installers are not implemented yet.
+The real low-level KVM backend, input routing, pairing, and signed installers are not implemented yet.
 
 ## Widget Direction
 
@@ -36,6 +37,13 @@ Open the prototype locally:
 
 ```text
 prototype/onstell-widget.html
+```
+
+Run the first desktop shell:
+
+```bash
+npm ci
+npm run tauri:dev
 ```
 
 ## Planned Install Options
