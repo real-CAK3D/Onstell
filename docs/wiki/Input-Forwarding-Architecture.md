@@ -138,6 +138,22 @@ Initial recommendation:
 6. Multi-device routing: support target switching and monitor-edge hysteresis.
 7. Clipboard/file transfer: design separately after input routing and trust revocation are stable.
 
+## Routing State Machine
+
+The milestone 2 routing model lives in `apps/desktop/src/routingModel.ts`. It is intentionally pure TypeScript and must not import OS capture, injection, clipboard, transport, or Tauri APIs.
+
+Current states:
+
+- `local`: no remote target is active.
+- `armed`: a trusted available target is selected, but no events are forwarding.
+- `forwarding`: simulated routing is active for a trusted available follower.
+- `paused`: routing is temporarily inactive.
+- `releasing`: held key/button state must be released before returning local.
+- `blocked`: the requested target failed trust, availability, or role checks.
+- `error`: an unexpected routing failure was recorded.
+
+The `npm run test:routing` check covers trust gating, blocked target cases, disconnect, permission loss, target change, trust loss, and emergency release transitions.
+
 ## Safety Gates
 
 Do not enable real forwarding until all gates pass:

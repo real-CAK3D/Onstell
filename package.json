@@ -11,10 +11,10 @@
     "build": "npm --workspace apps/desktop run build",
     "tauri:dev": "npm --workspace apps/desktop run tauri:dev",
     "tauri:build": "npm --workspace apps/desktop run tauri:build",
-    "check": "npm --workspace apps/desktop run check"
+    "check": "npm --workspace apps/desktop run check && npm run test:routing",
+    "test:routing": "node scripts/run-routing-tests.mjs"
   },
   "engines": {
     "node": ">=20"
   }
 }
-
