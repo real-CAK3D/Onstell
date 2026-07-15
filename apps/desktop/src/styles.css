@@ -369,6 +369,58 @@ input[type="range"] {
   margin: 12px 0 4px;
 }
 
+.discovery-panel {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+
+.discovery-panel header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.discovery-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.discovery-list {
+  display: grid;
+  gap: 7px;
+}
+
+.discovery-device {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .055);
+}
+
+.discovery-device strong {
+  font-size: 12px;
+}
+
+.discovery-device[data-availability="available"] strong,
+.discovery-device[data-availability="local"] strong {
+  color: var(--cyan);
+}
+
+.discovery-device[data-availability="offline"] strong {
+  color: var(--amber);
+}
+
+.discovery-device[data-availability="blocked"] strong {
+  color: var(--rose);
+}
+
 .layout-editor {
   margin-top: 14px;
   padding-top: 12px;
@@ -392,6 +444,7 @@ input[type="range"] {
 }
 
 .field-row span,
+.discovery-panel header span,
 .layout-editor header span,
 .nudge-grid span {
   color: var(--muted);
@@ -444,7 +497,8 @@ input[type="range"] {
 
   .metrics,
   .mode-grid,
-  .settings-actions {
+  .settings-actions,
+  .discovery-panel header {
     grid-template-columns: 1fr;
   }
 

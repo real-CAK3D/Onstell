@@ -2,6 +2,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
+  applyDiscoveryToProfile,
+  createDiscoverySnapshot,
+  scanFakeDiscovery,
+  type DiscoverySnapshot
+} from "./discoveryService";
+import {
   availabilityLabel,
   findDevice,
   findMonitor,
@@ -108,7 +114,7 @@ function booleanOr(value: unknown, fallback: boolean) {
   return typeof value === "boolean" ? value : fallback;
 }
 
-function render(status: OnstellStatus, settings: WidgetSettings, profile: LayoutProfile) {
+function render(status: OnstellStatus, settings: WidgetSettings, profile: LayoutProfile, discovery: DiscoverySnapshot) {
   const activeDevice = findDevice(profile, profile.activeDeviceId);
   const activeMonitor = findMonitor(profile, profile.activeMonitorId);
   const activeDeviceName = activeDevice?.name ?? status.activeDevice;
@@ -176,10 +182,39 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
             <button class="pill danger" type="button" data-reset-settings>Reset widget</button>
           </div>
 
+          ${renderDiscoveryPanel(discovery)}
+
           ${renderLayoutEditor(profile)}
         </div>
       </section>
     </main>
+  `;
+}
+
+function renderDiscoveryPanel(discovery: DiscoverySnapshot) {
+  const updated = discovery.updatedAt ? new Date(discovery.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "Not scanned";
+
+  return `
+    <section class="discovery-panel" aria-label="Device discovery">
+      <header>
+        <div>
+          <strong>Discovery</strong>
+          <span>${discovery.running ? "Scanning local network stub" : updated}</span>
+        </div>
+        <div class="discovery-actions">
+          <button class="pill" type="button" data-discovery-scan>${discovery.running ? "Scanning" : "Scan"}</button>
+          <button class="pill" type="button" data-discovery-apply ${discovery.devices.length === 0 ? "disabled" : ""}>Apply</button>
+        </div>
+      </header>
+      <div class="discovery-list">
+        ${discovery.devices.map((device) => `
+          <article class="discovery-device" data-availability="${device.availability}">
+            <span>${escapeHtml(device.name)}</span>
+            <strong>${availabilityLabel(device.availability)}</strong>
+          </article>
+        `).join("")}
+      </div>
+    </section>
   `;
 }
 
@@ -374,21 +409,27 @@ async function getStatus(): Promise<OnstellStatus> {
   }
 }
 
-function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, status: OnstellStatus) {
+function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, status: OnstellStatus, discovery: DiscoverySnapshot) {
   const widget = document.querySelector<HTMLElement>(".widget")!;
   const desktop = document.querySelector<HTMLElement>(".desktop-shell")!;
   const rerenderWidget = async (menuOpen = true) => {
-    render(status, settings, profile);
+    render(status, settings, profile, discovery);
     applySettings(settings);
     await applyNativeLayer(settings);
-    wireInteractions(settings, profile, status);
+    wireInteractions(settings, profile, status, discovery);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = String(menuOpen);
   };
   const rerenderForLayoutChange = () => {
     saveLayoutProfile(profile);
-    render(status, settings, profile);
+    render(status, settings, profile, discovery);
     applySettings(settings);
-    wireInteractions(settings, profile, status);
+    wireInteractions(settings, profile, status, discovery);
+    document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
+  };
+  const rerenderForDiscoveryChange = () => {
+    render(status, settings, profile, discovery);
+    applySettings(settings);
+    wireInteractions(settings, profile, status, discovery);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
 
@@ -439,6 +480,19 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
       applySettings(settings);
       await applyNativeLayer(settings);
     });
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-discovery-scan]")?.addEventListener("click", async () => {
+    discovery.running = true;
+    rerenderForDiscoveryChange();
+    Object.assign(discovery, await scanFakeDiscovery(profile, discovery));
+    rerenderForDiscoveryChange();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-discovery-apply]")?.addEventListener("click", () => {
+    applyDiscoveryToProfile(profile, discovery);
+    saveLayoutProfile(profile);
+    rerenderForLayoutChange();
   });
 
   document.querySelector<HTMLSelectElement>("[data-layout-device]")?.addEventListener("change", (event) => {
@@ -633,11 +687,12 @@ function resetWidgetPosition(widget: HTMLElement) {
 async function boot() {
   const settings = loadSettings();
   const profile = loadLayoutProfile();
+  const discovery = createDiscoverySnapshot(profile);
   const status = await getStatus();
-  render(status, settings, profile);
+  render(status, settings, profile, discovery);
   applySettings(settings);
   await applyNativeLayer(settings);
-  wireInteractions(settings, profile, status);
+  wireInteractions(settings, profile, status, discovery);
   void listen("onstell://open-settings", () => {
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   });
