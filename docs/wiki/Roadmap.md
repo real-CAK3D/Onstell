@@ -16,13 +16,22 @@
 - Single-instance behavior.
 - Start minimized behavior.
 - Persisted widget settings.
+- Local layout editor and fake discovery.
+- Pairing, trust, input-forwarding, and clipboard design placeholders.
 
-## Milestone 2: Local Device Model
+Status: complete as of `v0.1.0-beta.3`.
 
-- Device and monitor data model.
-- Layout profile storage.
-- Display layout editor.
-- Availability states.
+## Milestone 2: Trusted Local Routing Prototype
+
+- Permission and routing status panel.
+- Input routing state machine without OS hooks.
+- Emergency release command in UI and tray.
+- Read-only input capture spike plan and dev guard.
+- Local loopback follower simulator.
+- Trusted LAN pairing/session transport design.
+- `v0.1.0-beta.4` release checklist.
+
+Milestone 2 must keep real capture, suppression, injection, clipboard transfer, and LAN control disabled by default until the safety gates are proven.
 
 ## Milestone 3: Fixed Controller Input
 

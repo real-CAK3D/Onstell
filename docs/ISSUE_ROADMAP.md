@@ -1,136 +1,155 @@
 # Onstell Issue Roadmap
 
-This file mirrors the GitHub Issues that should drive the next development pass. The GitHub app connected to this Codex session could not create issues directly, so these are written as ready-to-copy issue bodies.
+This file mirrors the active GitHub Issues that drive the next development pass.
 
 ## Milestone 1: Local Widget and Device Layout Prototype
 
-Goal: make Onstell feel useful before live KVM networking exists. The widget should let a user model devices and displays, arrange them visually, and persist that state.
+Status: complete.
 
-### 1. Build manual device and monitor layout editor
+Completed tracker:
 
-Goal: let a user define manual devices and arrange their monitors.
+- #11 Milestone 1 tracker: local widget and device layout prototype.
 
-Scope:
-- Add a local/manual device list model.
-- Add monitor rectangles with position, size, label, color, and role.
-- Persist layout state locally.
-- Render layout changes in the glass widget.
+Completed work:
 
-Acceptance:
-- A user can add, edit, move, and remove at least two devices.
-- Layout survives app restart.
-- UI still works in the frameless glass window.
+- #2 Build manual device and monitor layout editor.
+- #3 Add persisted widget settings.
+- #4 Create tray controls and window actions.
+- #5 Define the device and layout data model.
+- #6 Prototype device discovery stub.
+- #7 Design pairing and trust flow.
+- #8 Plan input forwarding architecture.
+- #9 Add clipboard sync design.
+- #10 Maintain release hygiene for early betas.
 
-### 2. Add persisted widget settings
+## Milestone 2: Trusted Local Routing Prototype
 
-Goal: keep the high-fidelity glass widget feeling stable between launches.
+Goal: move from a local widget/layout shell into a trusted local routing prototype without enabling unsafe global input capture too early.
 
-Scope:
-- Persist position, size, opacity, theme accent, and always-on-top mode.
-- Add reset-to-default behavior.
-- Avoid layout jumps when the app starts.
+Tracker:
 
-Acceptance:
-- Widget settings survive restart.
-- Reset returns to a sensible default layout.
-- Settings failures degrade without crashing the app.
+- #12 Milestone 2 tracker: trusted local routing prototype.
 
-### 3. Create tray controls and window actions
+### #13 Add permission and routing status panel
 
-Goal: make the desktop shell manageable without taskbar friction.
+Goal: make OS permissions and routing readiness visible before real input capture/injection exists.
 
 Scope:
-- Add tray/menu commands for show, hide, reset position, settings, and quit.
-- Keep the frameless widget recoverable if moved off-screen.
-- Prepare command hooks for later pause/resume input routing.
+
+- Add a compact status section to the widget settings panel.
+- Show placeholder permission states for input capture, input injection, accessibility, clipboard, and transport.
+- Keep all states design-only or simulated until real platform checks exist.
+- Link the status language to the input-forwarding and clipboard design docs.
 
 Acceptance:
-- User can hide and restore the widget from tray/menu.
-- User can reset the window position.
-- Quit exits cleanly.
 
-### 4. Define the device/layout data model
+- The widget has a visible routing/permission readiness placeholder.
+- States clearly distinguish ready, missing, blocked, and design-only.
+- No real OS permission prompts or global input hooks are added.
+- Local checks and CI pass.
 
-Goal: establish the local model that later discovery, pairing, and input routing will use.
+### #14 Model input routing state machine without OS hooks
+
+Goal: create a testable routing model before connecting platform capture or injection APIs.
 
 Scope:
-- Define device, monitor, edge, profile, and availability types.
-- Keep the model serializable.
-- Document assumptions in code or docs.
+
+- Define routing states such as local, armed, forwarding, paused, releasing, blocked, and error.
+- Define events for trust change, target change, edge crossing, disconnect, emergency release, and permission loss.
+- Keep the model serializable or easy to inspect in tests.
+- Add focused tests for trust gating and release transitions.
 
 Acceptance:
-- The UI uses typed layout data instead of ad hoc state.
-- The model supports multiple devices and multiple monitors per device.
-- Future discovery can populate the same model.
 
-### 5. Prototype device discovery stub
+- Routing transitions can be tested without OS hooks.
+- Untrusted, pending, blocked, offline, and unknown devices cannot enter forwarding state.
+- Emergency release always transitions to a non-forwarding state.
+- Tests cover the main happy path and safety failures.
 
-Goal: create the shape of discovery without depending on final networking.
+### #15 Wire emergency release command in UI and tray
+
+Goal: make emergency release visible and callable before real input forwarding exists.
 
 Scope:
-- Add a discovery service interface.
-- Implement fake/local discovery for development.
-- Display availability states in the widget.
+
+- Add a Release Input action to the widget and tray/menu.
+- Add a native command stub that clears active forwarding state once that state exists.
+- Show a clear released/disconnected status in the widget.
+- Document the future keyboard shortcut but do not register global hotkeys yet.
 
 Acceptance:
-- Fake devices can appear/disappear in the UI.
-- Discovery state does not block manual layout editing.
-- Interface can later be backed by LAN discovery.
 
-### 6. Design pairing and trust flow
+- Release Input appears in the widget and tray/menu.
+- The command is safe to call while no forwarding exists.
+- The UI makes it obvious that input is released or not forwarding.
+- No global keyboard hooks are added in this issue.
 
-Goal: specify how two machines will trust each other before input forwarding exists.
+### #16 Create read-only input capture spike plan and dev guard
+
+Goal: prepare a read-only capture experiment without accidentally shipping capture behavior to normal users.
 
 Scope:
-- Document pairing states and user prompts.
-- Decide minimum local-network identity fields.
-- Define how rejected/forgotten devices behave.
+
+- Add a docs page or spike note for read-only capture evaluation.
+- Define dev-only guardrails for any future capture code.
+- List platform-specific permissions and rollback steps.
+- Decide what sanitized event fields may be logged during a spike.
 
 Acceptance:
-- Wiki or docs describe the pairing flow.
-- UI has placeholder states for unpaired, pending, trusted, and blocked.
-- No sensitive token or private key material is committed.
 
-### 7. Plan input forwarding architecture
+- Read-only capture cannot be enabled by default.
+- The spike plan says exactly what may and may not be logged.
+- OS permission requirements and user-visible warnings are documented.
+- No input suppression, injection, or forwarding is implemented.
 
-Goal: make the risky KVM core explicit before implementation.
+### #17 Add local loopback follower simulator
+
+Goal: exercise controller/follower state locally before LAN transport and OS injection exist.
 
 Scope:
-- Define controller/follower roles.
-- Document pointer edge detection.
-- Document keyboard routing and emergency release shortcut.
-- List OS-specific APIs or crates to evaluate.
+
+- Add a loopback follower interface or service that receives simulated routing events.
+- Display loopback status in the widget or dev panel.
+- Keep the simulator in-process and explicitly fake.
+- Use it to test trust gating, target changes, and release behavior.
 
 Acceptance:
-- There is an implementation plan for Windows, macOS, and Linux input capture/injection.
-- Emergency release behavior is defined before input capture work begins.
-- Security and accessibility permission needs are documented.
 
-### 8. Add clipboard sync design
+- A local fake follower can receive simulated pointer/key routing events.
+- The simulator does not touch real keyboard, pointer, clipboard, or network APIs.
+- Tests or documented manual steps prove emergency release clears simulated held state.
 
-Goal: prepare safe clipboard sharing across trusted devices.
+### #18 Design pairing session transport for trusted LAN prototype
+
+Goal: choose the first practical session shape for trusted LAN experiments.
 
 Scope:
-- Define what clipboard formats are in scope first.
-- Decide opt-in behavior and size limits.
-- Document privacy/security expectations.
+
+- Define session identity, handshake, and reconnect expectations.
+- Decide whether the first prototype uses WebSocket, QUIC, TCP, or another transport.
+- Document how trust records map to sessions.
+- Define replay, downgrade, and blocked-device handling.
 
 Acceptance:
-- Clipboard sync has a short design doc.
-- Binary/large payload behavior is explicitly deferred or constrained.
-- The UI has a placeholder for clipboard sync status.
 
-### 9. Add release hygiene cleanup task
+- A design doc names the candidate transport and fallback path.
+- The doc explains how trusted devices are authenticated before routing starts.
+- Blocked or revoked devices cannot reconnect silently.
+- The design leaves room for later encrypted production transport.
 
-Goal: keep GitHub Releases clean while the project is still in beta.
+### #19 Prepare v0.1.0-beta.4 release checklist
+
+Goal: keep the next beta clean while Milestone 2 introduces routing placeholders and simulators.
 
 Scope:
-- Keep `v0.1.0-beta.3` as the first clean development release.
-- Delete or mark obsolete any failed/messy draft release from `v0.1.0-beta.2`.
-- Keep failed `beta.1` and `beta.2` tags only if useful for audit history.
+
+- Draft beta.4 release notes as work lands.
+- Track which features are simulated versus real.
+- Verify installers/packages still build.
+- Keep beta.3 available as the first clean smoke-test release.
 
 Acceptance:
-- GitHub Releases page shows the clean current beta clearly.
-- Draft/failed releases do not confuse users.
-- Release notes call out that this is a smoke-test desktop shell, not a working KVM yet.
 
+- Release notes clearly say whether routing, capture, transport, and clipboard are simulated or real.
+- Checksums/assets are generated for beta.4 when released.
+- Failed drafts do not clutter the Releases page.
