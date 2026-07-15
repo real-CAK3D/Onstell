@@ -2,6 +2,8 @@ export type DeviceRole = "controller" | "follower";
 
 export type DeviceAvailability = "local" | "available" | "offline" | "blocked" | "unknown";
 
+export type PairingState = "local" | "unpaired" | "pending" | "trusted" | "blocked";
+
 export type MonitorRole = "primary" | "secondary" | "virtual";
 
 export type LayoutRect = {
@@ -25,6 +27,7 @@ export type OnstellDevice = {
   name: string;
   role: DeviceRole;
   availability: DeviceAvailability;
+  pairingState: PairingState;
   lastSeen: string | null;
   monitors: OnstellMonitor[];
 };
@@ -59,6 +62,7 @@ export const defaultLayoutProfile: LayoutProfile = {
       name: "Main PC",
       role: "controller",
       availability: "local",
+      pairingState: "local",
       lastSeen: null,
       monitors: [
         {
@@ -76,6 +80,7 @@ export const defaultLayoutProfile: LayoutProfile = {
       name: "Raspberry Pi",
       role: "follower",
       availability: "unknown",
+      pairingState: "unpaired",
       lastSeen: null,
       monitors: [
         {
@@ -93,6 +98,7 @@ export const defaultLayoutProfile: LayoutProfile = {
       name: "HP Laptop",
       role: "follower",
       availability: "offline",
+      pairingState: "trusted",
       lastSeen: null,
       monitors: [
         {
@@ -145,6 +151,17 @@ export function availabilityLabel(availability: DeviceAvailability) {
     unknown: "Placeholder"
   };
   return labels[availability];
+}
+
+export function pairingLabel(pairingState: PairingState) {
+  const labels: Record<PairingState, string> = {
+    local: "Local",
+    unpaired: "Unpaired",
+    pending: "Pending",
+    trusted: "Trusted",
+    blocked: "Blocked"
+  };
+  return labels[pairingState];
 }
 
 export function cloneDefaultLayoutProfile(): LayoutProfile {

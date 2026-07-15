@@ -72,6 +72,7 @@ function normalizeDevice(value: unknown): OnstellDevice | null {
     name: stringOr(value.name, "Unnamed device"),
     role: value.role === "controller" ? "controller" : "follower",
     availability: availabilityOr(value.availability),
+    pairingState: pairingStateOr(value.pairingState, value.role === "controller" ? "local" : "unpaired"),
     lastSeen: typeof value.lastSeen === "string" ? value.lastSeen : null,
     monitors
   };
@@ -113,6 +114,13 @@ function availabilityOr(value: unknown): OnstellDevice["availability"] {
     return value;
   }
   return "unknown";
+}
+
+function pairingStateOr(value: unknown, fallback: OnstellDevice["pairingState"]): OnstellDevice["pairingState"] {
+  if (value === "local" || value === "unpaired" || value === "pending" || value === "trusted" || value === "blocked") {
+    return value;
+  }
+  return fallback;
 }
 
 function sideOr(value: unknown, fallback: "left" | "right" | "top" | "bottom") {

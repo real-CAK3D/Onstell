@@ -1,9 +1,10 @@
-import type { DeviceAvailability, LayoutProfile, OnstellDevice } from "./layoutModel";
+import type { DeviceAvailability, LayoutProfile, OnstellDevice, PairingState } from "./layoutModel";
 
 export type DiscoveredDevice = {
   id: string;
   name: string;
   availability: DeviceAvailability;
+  pairingState: PairingState;
   source: "local" | "fake-lan";
   lastSeen: string | null;
   profileDeviceId: string | null;
@@ -45,6 +46,7 @@ export async function scanFakeDiscovery(profile: LayoutProfile, previous: Discov
       id: "fake-lan-workshop-mini",
       name: "Workshop Mini PC",
       availability: "available",
+      pairingState: "unpaired",
       source: "fake-lan",
       lastSeen: now,
       profileDeviceId: profile.devices.some((device) => device.id === "workshop-mini-pc") ? "workshop-mini-pc" : null
@@ -68,7 +70,7 @@ export function applyDiscoveryToProfile(profile: LayoutProfile, snapshot: Discov
       : profile.devices.find((device) => device.id === discovered.id);
 
     if (existing) {
-      existing.availability = discovered.availability;
+      existing.availability = existing.pairingState === "blocked" ? "blocked" : discovered.availability;
       existing.lastSeen = discovered.lastSeen;
       continue;
     }
@@ -79,6 +81,7 @@ export function applyDiscoveryToProfile(profile: LayoutProfile, snapshot: Discov
         name: discovered.name,
         role: "follower",
         availability: discovered.availability,
+        pairingState: "pending",
         lastSeen: discovered.lastSeen,
         monitors: [
           {
@@ -102,6 +105,7 @@ function discoveredFromProfileDevice(device: OnstellDevice): DiscoveredDevice {
     id: device.id,
     name: device.name,
     availability: device.availability,
+    pairingState: device.pairingState,
     source: device.role === "controller" ? "local" : "fake-lan",
     lastSeen: device.lastSeen,
     profileDeviceId: device.id

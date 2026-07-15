@@ -134,6 +134,11 @@ input {
   opacity: .78;
 }
 
+.display-card[data-pairing="blocked"],
+.discovery-device[data-pairing="blocked"] {
+  border-color: rgba(255, 106, 169, .42);
+}
+
 .widget {
   position: absolute;
   left: 42px;
@@ -419,6 +424,10 @@ input[type="range"] {
 
 .discovery-device[data-availability="blocked"] strong {
   color: var(--rose);
+}
+
+.discovery-device[data-pairing="pending"] strong {
+  color: var(--amber);
 }
 
 .layout-editor {

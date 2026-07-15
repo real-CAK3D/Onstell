@@ -11,10 +11,12 @@ import {
   availabilityLabel,
   findDevice,
   findMonitor,
+  pairingLabel,
   type DeviceAvailability,
   type LayoutProfile,
   type OnstellDevice,
-  type OnstellMonitor
+  type OnstellMonitor,
+  type PairingState
 } from "./layoutModel";
 import { loadLayoutProfile, saveLayoutProfile } from "./layoutStorage";
 import "./styles.css";
@@ -208,9 +210,9 @@ function renderDiscoveryPanel(discovery: DiscoverySnapshot) {
       </header>
       <div class="discovery-list">
         ${discovery.devices.map((device) => `
-          <article class="discovery-device" data-availability="${device.availability}">
+          <article class="discovery-device" data-availability="${device.availability}" data-pairing="${device.pairingState}">
             <span>${escapeHtml(device.name)}</span>
-            <strong>${availabilityLabel(device.availability)}</strong>
+            <strong>${availabilityLabel(device.availability)} - ${pairingLabel(device.pairingState)}</strong>
           </article>
         `).join("")}
       </div>
@@ -240,9 +242,10 @@ function renderMonitorCard(
   const isPrimary = monitor.role === "primary" || device.role === "controller";
   return `
     <div class="display-card ${isPrimary ? "is-primary" : ""} ${isActive ? "is-active" : ""} ${device.availability === "offline" ? "is-offline" : ""}"
+      data-pairing="${device.pairingState}"
       style="--monitor-color: ${monitor.color}; --tile-left: ${left}%; --tile-top: ${top}%; --tile-width: ${width}%; --tile-height: ${height}%">
       <strong>${escapeHtml(monitor.name)}</strong>
-      <span>${escapeHtml(device.name)} - ${availabilityLabel(device.availability)}</span>
+      <span>${escapeHtml(device.name)} - ${pairingLabel(device.pairingState)}</span>
     </div>
   `;
 }
@@ -280,6 +283,15 @@ function renderLayoutEditor(profile: LayoutProfile) {
         <select data-layout-availability>
           ${(["local", "available", "offline", "blocked", "unknown"] satisfies DeviceAvailability[]).map((availability) => (
             `<option value="${availability}" ${availability === selectedDevice.availability ? "selected" : ""}>${availabilityLabel(availability)}</option>`
+          )).join("")}
+        </select>
+      </label>
+
+      <label class="field-row">
+        <span>Pairing</span>
+        <select data-layout-pairing ${selectedDevice.role === "controller" ? "disabled" : ""}>
+          ${(["unpaired", "pending", "trusted", "blocked"] satisfies PairingState[]).map((pairingState) => (
+            `<option value="${pairingState}" ${pairingState === selectedDevice.pairingState ? "selected" : ""}>${pairingLabel(pairingState)}</option>`
           )).join("")}
         </select>
       </label>
@@ -515,6 +527,19 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
     const device = findDevice(profile, profile.activeDeviceId);
     if (!device) return;
     device.availability = (event.currentTarget as HTMLSelectElement).value as DeviceAvailability;
+    if (device.availability === "blocked" && device.role !== "controller") {
+      device.pairingState = "blocked";
+    }
+    rerenderForLayoutChange();
+  });
+
+  document.querySelector<HTMLSelectElement>("[data-layout-pairing]")?.addEventListener("change", (event) => {
+    const device = findDevice(profile, profile.activeDeviceId);
+    if (!device || device.role === "controller") return;
+    const nextPairing = (event.currentTarget as HTMLSelectElement).value as PairingState;
+    device.pairingState = nextPairing;
+    if (nextPairing === "blocked") device.availability = "blocked";
+    if (nextPairing === "trusted" && device.availability === "blocked") device.availability = "available";
     rerenderForLayoutChange();
   });
 
@@ -550,6 +575,7 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
       name: `Manual Device ${index}`,
       role: "follower",
       availability: "unknown",
+      pairingState: "unpaired",
       lastSeen: null,
       monitors: [
         {
