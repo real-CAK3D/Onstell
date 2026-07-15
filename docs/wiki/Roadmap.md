@@ -32,6 +32,8 @@
 - Emergency release shortcut.
 - Basic pairing.
 
+See [Input Forwarding Architecture](Input-Forwarding-Architecture) before implementing capture, injection, or routing.
+
 ## Milestone 4: Release Installers
 
 - Windows installer and portable ZIP.

@@ -8,8 +8,9 @@ These pages can be copied or pushed into the repository wiki:
 - Project Overview
 - Widget Milestone
 - Device Desktop Mode
+- Pairing and Trust
+- Input Forwarding Architecture
 - Virtual Monitor Mode
 - Release and Packages
 - Security Model
 - Roadmap
-

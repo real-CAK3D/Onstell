@@ -15,6 +15,8 @@ Onstell will eventually forward keyboard and pointer input. That means the secur
 
 See [Pairing and Trust](Pairing-and-Trust) for the current placeholder state model and the future real pairing flow.
 
+See [Input Forwarding Architecture](Input-Forwarding-Architecture) for controller/follower roles, pointer edge transfer, keyboard routing, emergency release behavior, and OS permission requirements.
+
 ## Trust States
 
 - Local: this machine.
@@ -24,6 +26,16 @@ See [Pairing and Trust](Pairing-and-Trust) for the current placeholder state mod
 - Blocked: explicitly denied until the user changes it.
 
 Input, clipboard, and file-transfer features must only target trusted devices.
+
+## Emergency Release
+
+Input forwarding must not ship until emergency release behavior is implemented and tested.
+
+- Windows/Linux default: Ctrl+Alt+Escape.
+- macOS default: Control+Option+Escape.
+- The shortcut is always handled locally and never forwarded.
+- It releases all held keys and pointer buttons locally and remotely.
+- It clears the active target and returns the widget to a disconnected state.
 
 ## Signing and Trust
 
