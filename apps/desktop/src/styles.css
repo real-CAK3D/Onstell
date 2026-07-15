@@ -67,15 +67,48 @@ input {
   position: absolute;
   top: 28px;
   right: 28px;
-  width: min(300px, calc(100% - 56px));
+  width: min(340px, calc(100% - 56px));
   display: grid;
-  justify-items: center;
   gap: 10px;
   pointer-events: none;
 }
 
+.device-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .055);
+  backdrop-filter: blur(12px);
+}
+
+.device-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.device-card header span {
+  color: var(--muted);
+}
+
+.device-card[data-device-role="controller"] {
+  border-color: rgba(155, 108, 255, .5);
+}
+
+.device-card.is-offline {
+  border-color: rgba(255, 209, 102, .34);
+  opacity: .78;
+}
+
+.monitor-stack {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+}
+
 .display-card {
-  min-width: 110px;
   padding: 10px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, .16);
@@ -94,12 +127,13 @@ input {
 }
 
 .display-card.is-primary {
-  border-color: rgba(155, 108, 255, .72);
-  box-shadow: 0 0 30px rgba(155, 108, 255, .22);
+  border-color: color-mix(in srgb, var(--monitor-color, var(--purple)) 72%, white 12%);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--monitor-color, var(--purple)) 28%, transparent);
 }
 
-.display-card.is-offline {
-  border-color: rgba(255, 209, 102, .38);
+.display-card.is-active {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--monitor-color, var(--purple)) 24%, transparent), rgba(255, 255, 255, .075));
 }
 
 .widget {
@@ -359,4 +393,3 @@ input[type="range"] {
     transition: none;
   }
 }
-

@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { availabilityLabel, findDevice, findMonitor, type LayoutProfile, type OnstellDevice, type OnstellMonitor } from "./layoutModel";
+import { loadLayoutProfile } from "./layoutStorage";
 import "./styles.css";
 
 type WidgetSettings = {
@@ -16,13 +18,12 @@ type WidgetSettings = {
 type OnstellStatus = {
   activeDevice: string;
   activeMonitor: string;
-  profile: string;
   latencyMs: number | null;
   seamlessEnabled: boolean;
   connected: boolean;
 };
 
-const defaultSettings: WidgetSettings = {
+const defaultSettings: Readonly<WidgetSettings> = {
   widgetOpacity: 0.9,
   idleOpacity: 0.6,
   hoverOpacity: 0.95,
@@ -34,9 +35,8 @@ const defaultSettings: WidgetSettings = {
 };
 
 const fallbackStatus: OnstellStatus = {
-  activeDevice: "Raspberry Pi",
-  activeMonitor: "Display 2",
-  profile: "Desk - Laptop Closed",
+  activeDevice: "Main PC",
+  activeMonitor: "Display 1",
   latencyMs: 3,
   seamlessEnabled: true,
   connected: false
@@ -59,7 +59,12 @@ function saveSettings(settings: WidgetSettings) {
   window.localStorage.setItem(settingsKey, JSON.stringify(settings));
 }
 
-function render(status: OnstellStatus, settings: WidgetSettings) {
+function render(status: OnstellStatus, settings: WidgetSettings, profile: LayoutProfile) {
+  const activeDevice = findDevice(profile, profile.activeDeviceId);
+  const activeMonitor = findMonitor(profile, profile.activeMonitorId);
+  const activeDeviceName = activeDevice?.name ?? status.activeDevice;
+  const activeMonitorName = activeMonitor?.monitor.name ?? status.activeMonitor;
+
   document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <main class="desktop-shell">
       <section class="tray-preview" aria-label="Tray preview">
@@ -68,18 +73,7 @@ function render(status: OnstellStatus, settings: WidgetSettings) {
       </section>
 
       <section class="layout-preview" aria-label="Physical display layout preview">
-        <article class="display-card is-primary">
-          <strong>Main PC</strong>
-          <span>Display 1</span>
-        </article>
-        <article class="display-card">
-          <strong>Raspberry Pi</strong>
-          <span>Display 2</span>
-        </article>
-        <article class="display-card is-offline">
-          <strong>HP Laptop</strong>
-          <span>Unavailable</span>
-        </article>
+        ${renderLayoutPreview(profile)}
       </section>
 
       <section class="widget" data-menu-open="false" data-idle="false" data-locked="${settings.locked}" aria-label="Onstell floating widget">
@@ -88,7 +82,7 @@ function render(status: OnstellStatus, settings: WidgetSettings) {
           <div class="copy">
             <div class="eyebrow"><span class="dot ${status.connected ? "is-online" : "is-placeholder"}"></span>Device Desktop mode</div>
             <div class="title">Onstell</div>
-            <div class="subline">${status.activeDevice} active - ${status.connected ? "connected" : "placeholder state"}</div>
+            <div class="subline">${escapeHtml(activeDeviceName)} active - ${escapeHtml(activeMonitorName)} - ${status.connected ? "connected" : "placeholder state"}</div>
           </div>
           <div class="actions">
             <button class="pill" type="button" data-toggle-seamless>${status.seamlessEnabled ? "Enabled" : "Disabled"}</button>
@@ -98,7 +92,7 @@ function render(status: OnstellStatus, settings: WidgetSettings) {
         </div>
 
         <div class="metrics">
-          <article><span>Profile</span><strong>${status.profile}</strong></article>
+          <article><span>Profile</span><strong>${escapeHtml(profile.name)}</strong></article>
           <article><span>Latency</span><strong>${status.latencyMs === null ? "N/A" : `${status.latencyMs} ms`}</strong></article>
           <article><span>Layer</span><strong data-layer-label>${labelForLayer(settings.layerMode)}</strong></article>
         </div>
@@ -133,6 +127,31 @@ function render(status: OnstellStatus, settings: WidgetSettings) {
   `;
 }
 
+function renderLayoutPreview(profile: LayoutProfile) {
+  return profile.devices.map((device) => `
+    <article class="device-card ${device.availability === "offline" ? "is-offline" : ""}" data-device-role="${device.role}">
+      <header>
+        <strong>${escapeHtml(device.name)}</strong>
+        <span>${availabilityLabel(device.availability)}</span>
+      </header>
+      <div class="monitor-stack">
+        ${device.monitors.map((monitor) => renderMonitorCard(profile, device, monitor)).join("")}
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderMonitorCard(profile: LayoutProfile, device: OnstellDevice, monitor: OnstellMonitor) {
+  const isActive = profile.activeMonitorId === monitor.id;
+  const isPrimary = monitor.role === "primary" || device.role === "controller";
+  return `
+    <div class="display-card ${isPrimary ? "is-primary" : ""} ${isActive ? "is-active" : ""}" style="--monitor-color: ${monitor.color}">
+      <strong>${escapeHtml(monitor.name)}</strong>
+      <span>${monitor.rect.width} x ${monitor.rect.height}</span>
+    </div>
+  `;
+}
+
 function slider(label: string, key: keyof WidgetSettings, value: number) {
   return `
     <label class="slider-row">
@@ -164,6 +183,15 @@ function labelForLayer(mode: WidgetSettings["layerMode"]) {
     summoned: "Summoned only"
   };
   return labels[mode];
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function applySettings(settings: WidgetSettings) {
@@ -291,12 +319,12 @@ function wireInteractions(settings: WidgetSettings) {
 
 async function boot() {
   const settings = loadSettings();
+  const profile = loadLayoutProfile();
   const status = await getStatus();
-  render(status, settings);
+  render(status, settings, profile);
   applySettings(settings);
   await applyNativeLayer(settings);
   wireInteractions(settings);
 }
 
 void boot();
-
