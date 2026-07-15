@@ -1,7 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { availabilityLabel, findDevice, findMonitor, type LayoutProfile, type OnstellDevice, type OnstellMonitor } from "./layoutModel";
-import { loadLayoutProfile } from "./layoutStorage";
+import {
+  availabilityLabel,
+  findDevice,
+  findMonitor,
+  type DeviceAvailability,
+  type LayoutProfile,
+  type OnstellDevice,
+  type OnstellMonitor
+} from "./layoutModel";
+import { loadLayoutProfile, saveLayoutProfile } from "./layoutStorage";
 import "./styles.css";
 
 type WidgetSettings = {
@@ -44,6 +52,7 @@ const fallbackStatus: OnstellStatus = {
 
 const settingsKey = "onstell.widget.settings";
 const positionKey = "onstell.widget.position";
+const layoutNudgeStep = 160;
 
 function loadSettings(): WidgetSettings {
   const stored = window.localStorage.getItem(settingsKey);
@@ -121,6 +130,8 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
           ${toggle("Remember widget position", "rememberPosition", settings.rememberPosition)}
           ${toggle("Snap to screen edge", "snapToEdge", settings.snapToEdge)}
           ${toggle("Hide during full-screen apps", "hideDuringFullscreen", settings.hideDuringFullscreen)}
+
+          ${renderLayoutEditor(profile)}
         </div>
       </section>
     </main>
@@ -128,28 +139,113 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
 }
 
 function renderLayoutPreview(profile: LayoutProfile) {
-  return profile.devices.map((device) => `
-    <article class="device-card ${device.availability === "offline" ? "is-offline" : ""}" data-device-role="${device.role}">
-      <header>
-        <strong>${escapeHtml(device.name)}</strong>
-        <span>${availabilityLabel(device.availability)}</span>
-      </header>
-      <div class="monitor-stack">
-        ${device.monitors.map((monitor) => renderMonitorCard(profile, device, monitor)).join("")}
-      </div>
-    </article>
-  `).join("");
+  const tiles = getMonitorTiles(profile);
+  return `
+    <div class="layout-map">
+      ${tiles.map(({ device, monitor, left, top, width, height }) => renderMonitorCard(profile, device, monitor, left, top, width, height)).join("")}
+    </div>
+  `;
 }
 
-function renderMonitorCard(profile: LayoutProfile, device: OnstellDevice, monitor: OnstellMonitor) {
+function renderMonitorCard(
+  profile: LayoutProfile,
+  device: OnstellDevice,
+  monitor: OnstellMonitor,
+  left: number,
+  top: number,
+  width: number,
+  height: number
+) {
   const isActive = profile.activeMonitorId === monitor.id;
   const isPrimary = monitor.role === "primary" || device.role === "controller";
   return `
-    <div class="display-card ${isPrimary ? "is-primary" : ""} ${isActive ? "is-active" : ""}" style="--monitor-color: ${monitor.color}">
+    <div class="display-card ${isPrimary ? "is-primary" : ""} ${isActive ? "is-active" : ""} ${device.availability === "offline" ? "is-offline" : ""}"
+      style="--monitor-color: ${monitor.color}; --tile-left: ${left}%; --tile-top: ${top}%; --tile-width: ${width}%; --tile-height: ${height}%">
       <strong>${escapeHtml(monitor.name)}</strong>
-      <span>${monitor.rect.width} x ${monitor.rect.height}</span>
+      <span>${escapeHtml(device.name)} - ${availabilityLabel(device.availability)}</span>
     </div>
   `;
+}
+
+function renderLayoutEditor(profile: LayoutProfile) {
+  const selectedDevice = findDevice(profile, profile.activeDeviceId) ?? profile.devices[0];
+  const selectedMonitor = findMonitor(profile, profile.activeMonitorId)?.monitor ?? selectedDevice?.monitors[0];
+
+  if (!selectedDevice || !selectedMonitor) return "";
+
+  return `
+    <section class="layout-editor" aria-label="Manual layout editor">
+      <header>
+        <div>
+          <strong>Layout editor</strong>
+          <span>${profile.devices.length} devices - ${profile.devices.flatMap((device) => device.monitors).length} monitors</span>
+        </div>
+        <button class="pill" type="button" data-add-device>Add</button>
+      </header>
+
+      <label class="field-row">
+        <span>Device</span>
+        <select data-layout-device>
+          ${profile.devices.map((device) => `<option value="${escapeHtml(device.id)}" ${device.id === selectedDevice.id ? "selected" : ""}>${escapeHtml(device.name)}</option>`).join("")}
+        </select>
+      </label>
+
+      <label class="field-row">
+        <span>Name</span>
+        <input type="text" value="${escapeHtml(selectedDevice.name)}" data-layout-device-name>
+      </label>
+
+      <label class="field-row">
+        <span>Status</span>
+        <select data-layout-availability>
+          ${(["local", "available", "offline", "blocked", "unknown"] satisfies DeviceAvailability[]).map((availability) => (
+            `<option value="${availability}" ${availability === selectedDevice.availability ? "selected" : ""}>${availabilityLabel(availability)}</option>`
+          )).join("")}
+        </select>
+      </label>
+
+      <label class="field-row">
+        <span>Monitor</span>
+        <select data-layout-monitor>
+          ${selectedDevice.monitors.map((monitor) => `<option value="${escapeHtml(monitor.id)}" ${monitor.id === selectedMonitor.id ? "selected" : ""}>${escapeHtml(monitor.name)}</option>`).join("")}
+        </select>
+      </label>
+
+      <label class="field-row">
+        <span>Label</span>
+        <input type="text" value="${escapeHtml(selectedMonitor.name)}" data-layout-monitor-name>
+      </label>
+
+      <div class="nudge-grid" aria-label="Move selected monitor">
+        <span>${selectedMonitor.rect.x}, ${selectedMonitor.rect.y}</span>
+        <button class="icon" type="button" data-nudge-x="0" data-nudge-y="-${layoutNudgeStep}" aria-label="Move monitor up">Up</button>
+        <button class="icon" type="button" data-nudge-x="-${layoutNudgeStep}" data-nudge-y="0" aria-label="Move monitor left">Left</button>
+        <button class="icon" type="button" data-nudge-x="${layoutNudgeStep}" data-nudge-y="0" aria-label="Move monitor right">Right</button>
+        <button class="icon" type="button" data-nudge-x="0" data-nudge-y="${layoutNudgeStep}" aria-label="Move monitor down">Down</button>
+      </div>
+
+      <button class="pill danger" type="button" data-remove-device ${profile.devices.length <= 1 ? "disabled" : ""}>Remove selected device</button>
+    </section>
+  `;
+}
+
+function getMonitorTiles(profile: LayoutProfile) {
+  const monitors = profile.devices.flatMap((device) => device.monitors.map((monitor) => ({ device, monitor })));
+  const minX = Math.min(...monitors.map(({ monitor }) => monitor.rect.x));
+  const minY = Math.min(...monitors.map(({ monitor }) => monitor.rect.y));
+  const maxX = Math.max(...monitors.map(({ monitor }) => monitor.rect.x + monitor.rect.width));
+  const maxY = Math.max(...monitors.map(({ monitor }) => monitor.rect.y + monitor.rect.height));
+  const spanX = Math.max(1, maxX - minX);
+  const spanY = Math.max(1, maxY - minY);
+
+  return monitors.map(({ device, monitor }) => ({
+    device,
+    monitor,
+    left: ((monitor.rect.x - minX) / spanX) * 100,
+    top: ((monitor.rect.y - minY) / spanY) * 100,
+    width: (monitor.rect.width / spanX) * 100,
+    height: (monitor.rect.height / spanY) * 100
+  }));
 }
 
 function slider(label: string, key: keyof WidgetSettings, value: number) {
@@ -194,6 +290,11 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function pickDeviceColor(index: number) {
+  const colors = ["#35d6ff", "#ffd166", "#ff6aa9", "#22c55e", "#f97316", "#a78bfa"];
+  return colors[index % colors.length];
+}
+
 function applySettings(settings: WidgetSettings) {
   const root = document.documentElement;
   root.style.setProperty("--widget-opacity", String(settings.widgetOpacity));
@@ -220,9 +321,16 @@ async function getStatus(): Promise<OnstellStatus> {
   }
 }
 
-function wireInteractions(settings: WidgetSettings) {
+function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, status: OnstellStatus) {
   const widget = document.querySelector<HTMLElement>(".widget")!;
   const desktop = document.querySelector<HTMLElement>(".desktop-shell")!;
+  const rerenderForLayoutChange = () => {
+    saveLayoutProfile(profile);
+    render(status, settings, profile);
+    applySettings(settings);
+    wireInteractions(settings, profile, status);
+    document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
+  };
 
   document.querySelector<HTMLElement>("[data-settings]")!.addEventListener("click", () => {
     widget.dataset.menuOpen = widget.dataset.menuOpen === "true" ? "false" : "true";
@@ -257,6 +365,89 @@ function wireInteractions(settings: WidgetSettings) {
       applySettings(settings);
       await applyNativeLayer(settings);
     });
+  });
+
+  document.querySelector<HTMLSelectElement>("[data-layout-device]")?.addEventListener("change", (event) => {
+    const deviceId = (event.currentTarget as HTMLSelectElement).value;
+    const device = findDevice(profile, deviceId);
+    if (!device) return;
+    profile.activeDeviceId = device.id;
+    profile.activeMonitorId = device.monitors[0]?.id ?? profile.activeMonitorId;
+    rerenderForLayoutChange();
+  });
+
+  document.querySelector<HTMLInputElement>("[data-layout-device-name]")?.addEventListener("change", (event) => {
+    const device = findDevice(profile, profile.activeDeviceId);
+    if (!device) return;
+    device.name = (event.currentTarget as HTMLInputElement).value.trim() || device.name;
+    rerenderForLayoutChange();
+  });
+
+  document.querySelector<HTMLSelectElement>("[data-layout-availability]")?.addEventListener("change", (event) => {
+    const device = findDevice(profile, profile.activeDeviceId);
+    if (!device) return;
+    device.availability = (event.currentTarget as HTMLSelectElement).value as DeviceAvailability;
+    rerenderForLayoutChange();
+  });
+
+  document.querySelector<HTMLSelectElement>("[data-layout-monitor]")?.addEventListener("change", (event) => {
+    profile.activeMonitorId = (event.currentTarget as HTMLSelectElement).value;
+    rerenderForLayoutChange();
+  });
+
+  document.querySelector<HTMLInputElement>("[data-layout-monitor-name]")?.addEventListener("change", (event) => {
+    const selection = findMonitor(profile, profile.activeMonitorId);
+    if (!selection) return;
+    selection.monitor.name = (event.currentTarget as HTMLInputElement).value.trim() || selection.monitor.name;
+    rerenderForLayoutChange();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-nudge-x][data-nudge-y]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const selection = findMonitor(profile, profile.activeMonitorId);
+      if (!selection) return;
+      selection.monitor.rect.x += Number(button.dataset.nudgeX);
+      selection.monitor.rect.y += Number(button.dataset.nudgeY);
+      rerenderForLayoutChange();
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-add-device]")?.addEventListener("click", () => {
+    const index = profile.devices.length + 1;
+    const id = `manual-device-${crypto.randomUUID()}`;
+    const monitorId = `${id}-monitor`;
+    const offset = index * layoutNudgeStep;
+    profile.devices.push({
+      id,
+      name: `Manual Device ${index}`,
+      role: "follower",
+      availability: "unknown",
+      lastSeen: null,
+      monitors: [
+        {
+          id: monitorId,
+          name: "Display 1",
+          role: "secondary",
+          rect: { x: offset, y: offset, width: 1920, height: 1080 },
+          scale: 1,
+          color: pickDeviceColor(index)
+        }
+      ]
+    });
+    profile.activeDeviceId = id;
+    profile.activeMonitorId = monitorId;
+    rerenderForLayoutChange();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-remove-device]")?.addEventListener("click", () => {
+    if (profile.devices.length <= 1) return;
+    const index = profile.devices.findIndex((device) => device.id === profile.activeDeviceId);
+    if (index < 0) return;
+    profile.devices.splice(index, 1);
+    const nextDevice = profile.devices[Math.max(0, index - 1)] ?? profile.devices[0];
+    profile.activeDeviceId = nextDevice.id;
+    profile.activeMonitorId = nextDevice.monitors[0]?.id ?? profile.activeMonitorId;
+    rerenderForLayoutChange();
   });
 
   let dragging = false;
@@ -324,7 +515,7 @@ async function boot() {
   render(status, settings, profile);
   applySettings(settings);
   await applyNativeLayer(settings);
-  wireInteractions(settings);
+  wireInteractions(settings, profile, status);
 }
 
 void boot();

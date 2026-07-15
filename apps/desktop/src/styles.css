@@ -67,53 +67,46 @@ input {
   position: absolute;
   top: 28px;
   right: 28px;
-  width: min(340px, calc(100% - 56px));
-  display: grid;
-  gap: 10px;
+  width: min(360px, calc(100% - 56px));
   pointer-events: none;
 }
 
-.device-card {
-  display: grid;
-  gap: 8px;
-  padding: 10px;
+.layout-map {
+  position: relative;
+  aspect-ratio: 16 / 9;
   border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 16px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, .055);
   backdrop-filter: blur(12px);
+  overflow: hidden;
 }
 
-.device-card header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.device-card header span {
-  color: var(--muted);
-}
-
-.device-card[data-device-role="controller"] {
-  border-color: rgba(155, 108, 255, .5);
-}
-
-.device-card.is-offline {
-  border-color: rgba(255, 209, 102, .34);
-  opacity: .78;
-}
-
-.monitor-stack {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  gap: 8px;
+.layout-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .display-card {
+  position: absolute;
+  left: max(2%, var(--tile-left));
+  top: max(2%, var(--tile-top));
+  width: max(24%, calc(var(--tile-width) - 2%));
+  height: max(22%, calc(var(--tile-height) - 2%));
+  min-height: 48px;
   padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, .16);
   background: rgba(255, 255, 255, .075);
   backdrop-filter: blur(12px);
+  box-sizing: border-box;
 }
 
 .display-card strong,
@@ -134,6 +127,11 @@ input {
 .display-card.is-active {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--monitor-color, var(--purple)) 24%, transparent), rgba(255, 255, 255, .075));
+}
+
+.display-card.is-offline {
+  border-color: rgba(255, 209, 102, .34);
+  opacity: .78;
 }
 
 .widget {
@@ -306,6 +304,8 @@ button {
   box-shadow: 0 22px 70px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(255, 255, 255, .18);
   backdrop-filter: blur(28px) saturate(1.5);
   z-index: 2;
+  max-height: min(78vh, 620px);
+  overflow: auto;
 }
 
 .widget[data-menu-open="true"] .settings-panel {
@@ -362,6 +362,67 @@ input[type="range"] {
   margin: 8px 0;
 }
 
+.layout-editor {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+
+.layout-editor header,
+.field-row {
+  display: grid;
+  gap: 6px;
+}
+
+.layout-editor header {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.field-row {
+  margin: 8px 0;
+}
+
+.field-row span,
+.layout-editor header span,
+.nudge-grid span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.field-row input,
+.field-row select {
+  min-width: 0;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .08);
+  padding: 8px 9px;
+}
+
+.field-row select option {
+  color: #171225;
+}
+
+.nudge-grid {
+  display: grid;
+  grid-template-columns: 1fr repeat(4, auto);
+  align-items: center;
+  gap: 7px;
+  margin: 10px 0;
+}
+
+.danger {
+  width: 100%;
+  border-color: rgba(255, 106, 169, .32);
+}
+
+.danger:disabled {
+  cursor: not-allowed;
+  opacity: .52;
+}
+
 @media (max-width: 560px) {
   .desktop-shell {
     min-height: 640px;
@@ -384,6 +445,14 @@ input[type="range"] {
     left: 14px;
     right: 14px;
     width: auto;
+  }
+
+  .nudge-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .nudge-grid span {
+    grid-column: 1 / -1;
   }
 }
 
