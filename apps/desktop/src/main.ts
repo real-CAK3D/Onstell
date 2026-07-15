@@ -23,6 +23,11 @@ type WidgetSettings = {
   hideDuringFullscreen: boolean;
 };
 
+type WidgetPosition = {
+  left: number;
+  top: number;
+};
+
 type OnstellStatus = {
   activeDevice: string;
   activeMonitor: string;
@@ -53,19 +58,53 @@ const fallbackStatus: OnstellStatus = {
 const settingsKey = "onstell.widget.settings";
 const positionKey = "onstell.widget.position";
 const layoutNudgeStep = 160;
+const layerModes: WidgetSettings["layerMode"][] = ["always-on-top", "normal", "behind", "summoned"];
 
 function loadSettings(): WidgetSettings {
   const stored = window.localStorage.getItem(settingsKey);
-  if (!stored) return defaultSettings;
+  if (!stored) return { ...defaultSettings };
   try {
-    return { ...defaultSettings, ...JSON.parse(stored) } as WidgetSettings;
+    return normalizeSettings(JSON.parse(stored));
   } catch {
-    return defaultSettings;
+    window.localStorage.removeItem(settingsKey);
+    return { ...defaultSettings };
   }
 }
 
 function saveSettings(settings: WidgetSettings) {
   window.localStorage.setItem(settingsKey, JSON.stringify(settings));
+}
+
+function resetSettings() {
+  window.localStorage.removeItem(settingsKey);
+  return { ...defaultSettings };
+}
+
+function normalizeSettings(value: unknown): WidgetSettings {
+  const record = typeof value === "object" && value !== null ? value as Partial<WidgetSettings> : {};
+  const layerMode = layerModes.includes(record.layerMode as WidgetSettings["layerMode"])
+    ? record.layerMode as WidgetSettings["layerMode"]
+    : defaultSettings.layerMode;
+
+  return {
+    widgetOpacity: opacityOr(record.widgetOpacity, defaultSettings.widgetOpacity),
+    idleOpacity: opacityOr(record.idleOpacity, defaultSettings.idleOpacity),
+    hoverOpacity: opacityOr(record.hoverOpacity, defaultSettings.hoverOpacity),
+    layerMode,
+    locked: booleanOr(record.locked, defaultSettings.locked),
+    rememberPosition: booleanOr(record.rememberPosition, defaultSettings.rememberPosition),
+    snapToEdge: booleanOr(record.snapToEdge, defaultSettings.snapToEdge),
+    hideDuringFullscreen: booleanOr(record.hideDuringFullscreen, defaultSettings.hideDuringFullscreen)
+  };
+}
+
+function opacityOr(value: unknown, fallback: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(1, Math.max(0.2, value));
+}
+
+function booleanOr(value: unknown, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function render(status: OnstellStatus, settings: WidgetSettings, profile: LayoutProfile) {
@@ -130,6 +169,11 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
           ${toggle("Remember widget position", "rememberPosition", settings.rememberPosition)}
           ${toggle("Snap to screen edge", "snapToEdge", settings.snapToEdge)}
           ${toggle("Hide during full-screen apps", "hideDuringFullscreen", settings.hideDuringFullscreen)}
+
+          <div class="settings-actions">
+            <button class="pill" type="button" data-reset-position>Reset position</button>
+            <button class="pill danger" type="button" data-reset-settings>Reset widget</button>
+          </div>
 
           ${renderLayoutEditor(profile)}
         </div>
@@ -324,6 +368,13 @@ async function getStatus(): Promise<OnstellStatus> {
 function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, status: OnstellStatus) {
   const widget = document.querySelector<HTMLElement>(".widget")!;
   const desktop = document.querySelector<HTMLElement>(".desktop-shell")!;
+  const rerenderWidget = async (menuOpen = true) => {
+    render(status, settings, profile);
+    applySettings(settings);
+    await applyNativeLayer(settings);
+    wireInteractions(settings, profile, status);
+    document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = String(menuOpen);
+  };
   const rerenderForLayoutChange = () => {
     saveLayoutProfile(profile);
     render(status, settings, profile);
@@ -353,6 +404,15 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
       applySettings(settings);
       await applyNativeLayer(settings);
     });
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-reset-settings]")?.addEventListener("click", async () => {
+    Object.assign(settings, resetSettings());
+    await rerenderWidget(true);
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-reset-position]")?.addEventListener("click", () => {
+    resetWidgetPosition(widget);
   });
 
   document.querySelectorAll<HTMLButtonElement>("[data-layer]").forEach((button) => {
@@ -456,18 +516,7 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
   let widgetX = 0;
   let widgetY = 0;
 
-  const storedPosition = window.localStorage.getItem(positionKey);
-  if (storedPosition) {
-    try {
-      const position = JSON.parse(storedPosition) as { left: number; top: number };
-      widget.style.left = `${position.left}px`;
-      widget.style.top = `${position.top}px`;
-      widget.style.right = "auto";
-      widget.style.bottom = "auto";
-    } catch {
-      window.localStorage.removeItem(positionKey);
-    }
-  }
+  restoreWidgetPosition(widget, desktop, settings);
 
   widget.addEventListener("pointerdown", (event) => {
     if (settings.locked || event.target instanceof HTMLElement && event.target.closest("button, input, label")) return;
@@ -500,12 +549,71 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
     dragging = false;
     if (widget.hasPointerCapture(event.pointerId)) widget.releasePointerCapture(event.pointerId);
     if (settings.rememberPosition) {
-      window.localStorage.setItem(positionKey, JSON.stringify({
+      saveWidgetPosition({
         left: Number.parseFloat(widget.style.left),
         top: Number.parseFloat(widget.style.top)
-      }));
+      });
     }
   });
+}
+
+function restoreWidgetPosition(widget: HTMLElement, desktop: HTMLElement, settings: WidgetSettings) {
+  if (!settings.rememberPosition) {
+    window.localStorage.removeItem(positionKey);
+    return;
+  }
+
+  const storedPosition = window.localStorage.getItem(positionKey);
+  if (!storedPosition) return;
+
+  try {
+    const position = normalizeWidgetPosition(JSON.parse(storedPosition));
+    if (!position) {
+      window.localStorage.removeItem(positionKey);
+      return;
+    }
+    const bounded = boundWidgetPosition(position, widget, desktop);
+    applyWidgetPosition(widget, bounded);
+    saveWidgetPosition(bounded);
+  } catch {
+    window.localStorage.removeItem(positionKey);
+  }
+}
+
+function normalizeWidgetPosition(value: unknown): WidgetPosition | null {
+  if (typeof value !== "object" || value === null) return null;
+  const candidate = value as Partial<WidgetPosition>;
+  if (typeof candidate.left !== "number" || typeof candidate.top !== "number") return null;
+  if (!Number.isFinite(candidate.left) || !Number.isFinite(candidate.top)) return null;
+  return { left: candidate.left, top: candidate.top };
+}
+
+function boundWidgetPosition(position: WidgetPosition, widget: HTMLElement, desktop: HTMLElement): WidgetPosition {
+  const parent = desktop.getBoundingClientRect();
+  const rect = widget.getBoundingClientRect();
+  return {
+    left: Math.min(Math.max(8, position.left), Math.max(8, parent.width - rect.width - 8)),
+    top: Math.min(Math.max(8, position.top), Math.max(8, parent.height - rect.height - 8))
+  };
+}
+
+function applyWidgetPosition(widget: HTMLElement, position: WidgetPosition) {
+  widget.style.left = `${position.left}px`;
+  widget.style.top = `${position.top}px`;
+  widget.style.right = "auto";
+  widget.style.bottom = "auto";
+}
+
+function saveWidgetPosition(position: WidgetPosition) {
+  window.localStorage.setItem(positionKey, JSON.stringify(position));
+}
+
+function resetWidgetPosition(widget: HTMLElement) {
+  window.localStorage.removeItem(positionKey);
+  widget.style.left = "";
+  widget.style.top = "";
+  widget.style.right = "";
+  widget.style.bottom = "";
 }
 
 async function boot() {

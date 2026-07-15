@@ -362,6 +362,13 @@ input[type="range"] {
   margin: 8px 0;
 }
 
+.settings-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
 .layout-editor {
   margin-top: 14px;
   padding-top: 12px;
@@ -436,7 +443,8 @@ input[type="range"] {
   }
 
   .metrics,
-  .mode-grid {
+  .mode-grid,
+  .settings-actions {
     grid-template-columns: 1fr;
   }
 
