@@ -33,3 +33,15 @@ Default visual identity:
 
 The widget must remain readable when transparent.
 
+## Routing Readiness Panel
+
+Milestone 2 adds a design-only routing readiness panel to the widget settings surface. It must stay informational until the safety gates in [Input Forwarding Architecture](Input-Forwarding-Architecture) and [Clipboard Sync Design](Clipboard-Sync-Design) are satisfied.
+
+Readiness states:
+
+- Ready: the local placeholder model is available.
+- Missing: an OS permission or implementation check is not present yet.
+- Blocked: the feature is deliberately disabled until a release gate is satisfied.
+- Design only: the UI state is modeled, but no real OS hook, network session, or clipboard transfer exists.
+
+The panel must not trigger OS permission prompts, global input hooks, input injection, or clipboard access.

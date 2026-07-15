@@ -46,6 +46,8 @@ type OnstellStatus = {
   clipboardSync: string;
 };
 
+type ReadinessState = "ready" | "missing" | "blocked" | "design-only";
+
 const defaultSettings: Readonly<WidgetSettings> = {
   widgetOpacity: 0.9,
   idleOpacity: 0.6,
@@ -187,6 +189,8 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
             <button class="pill danger" type="button" data-reset-settings>Reset widget</button>
           </div>
 
+          ${renderReadinessPanel(status)}
+
           ${renderDiscoveryPanel(discovery)}
 
           ${renderLayoutEditor(profile)}
@@ -194,6 +198,46 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
       </section>
     </main>
   `;
+}
+
+function renderReadinessPanel(status: OnstellStatus) {
+  const items: Array<{ label: string; detail: string; state: ReadinessState }> = [
+    { label: "Input capture", detail: "No global listener", state: "design-only" },
+    { label: "Input injection", detail: "Disabled until release gate", state: "blocked" },
+    { label: "Accessibility", detail: "Permission check pending", state: "missing" },
+    { label: "Clipboard", detail: status.clipboardSync, state: "design-only" },
+    { label: "Transport", detail: "Local model only", state: "ready" }
+  ];
+
+  return `
+    <section class="readiness-panel" aria-label="Routing and permission readiness">
+      <header>
+        <div>
+          <strong>Routing readiness</strong>
+          <span>Design-only safety gate</span>
+        </div>
+      </header>
+      <div class="readiness-list">
+        ${items.map((item) => `
+          <article class="readiness-item" data-readiness="${item.state}">
+            <span>${escapeHtml(item.label)}</span>
+            <strong>${readinessLabel(item.state)}</strong>
+            <em>${escapeHtml(item.detail)}</em>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function readinessLabel(state: ReadinessState) {
+  const labels: Record<ReadinessState, string> = {
+    ready: "Ready",
+    missing: "Missing",
+    blocked: "Blocked",
+    "design-only": "Design only"
+  };
+  return labels[state];
 }
 
 function renderDiscoveryPanel(discovery: DiscoverySnapshot) {
