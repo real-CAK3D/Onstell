@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   availabilityLabel,
@@ -357,6 +358,14 @@ async function applyNativeLayer(settings: WidgetSettings) {
   }
 }
 
+async function invokeNativeAction(command: "hide_widget" | "open_widget_settings" | "reset_widget_position" | "quit_app") {
+  try {
+    await invoke(command);
+  } catch {
+    // Browser preview cannot call native Tauri shell commands.
+  }
+}
+
 async function getStatus(): Promise<OnstellStatus> {
   try {
     return await invoke<OnstellStatus>("get_status");
@@ -391,6 +400,10 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
     widget.dataset.menuOpen = "false";
   });
 
+  document.querySelector<HTMLElement>("[data-disconnect]")?.addEventListener("click", async () => {
+    await invokeNativeAction("hide_widget");
+  });
+
   document.querySelectorAll<HTMLInputElement>("[data-setting]").forEach((control) => {
     control.addEventListener("input", async () => {
       const key = control.dataset.setting as keyof WidgetSettings;
@@ -413,6 +426,7 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
 
   document.querySelector<HTMLButtonElement>("[data-reset-position]")?.addEventListener("click", () => {
     resetWidgetPosition(widget);
+    void invokeNativeAction("reset_widget_position");
   });
 
   document.querySelectorAll<HTMLButtonElement>("[data-layer]").forEach((button) => {
@@ -624,6 +638,9 @@ async function boot() {
   applySettings(settings);
   await applyNativeLayer(settings);
   wireInteractions(settings, profile, status);
+  void listen("onstell://open-settings", () => {
+    document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
+  });
 }
 
 void boot();
