@@ -9,6 +9,7 @@ Onstell must treat input forwarding as a privileged action. A discovered device 
 - `pending`: a pairing request has been started, but the user has not confirmed the same code on both machines.
 - `trusted`: the device is allowed to participate in future input, clipboard, and layout workflows.
 - `blocked`: the device must not receive control traffic and should be hidden from automatic reconnect flows.
+- `revoked`: a previously trusted device has lost trust and must not reconnect without an explicit recovery or re-pairing action.
 
 ## First Milestone Placeholder Flow
 
@@ -20,6 +21,8 @@ The current desktop shell only models the flow:
 4. Trusted devices may be used by later input-routing prototypes.
 
 No real network pairing, cryptographic key exchange, input forwarding, or clipboard sync is implemented yet.
+
+Milestone 3 adds `apps/desktop/src/pairingTrustStore.ts` as a local-only prototype for identity and peer trust records. It stores fake identity metadata, peer ids, display names, optional public identity fingerprints, trust state, first-trusted and last-seen timestamps, protocol version expectations, and blocked/revoked recovery flags. It does not create private keys, sockets, pairing exchanges, nonces, session keys, encrypted frames, or real crypto material.
 
 ## Future Real Pairing Flow
 
@@ -43,6 +46,8 @@ A future trusted device record should include:
 - Last seen timestamp.
 - Trust state.
 - Optional local nickname.
+
+Blocked and revoked records must persist as local decisions. They cannot move back to pending or trusted through discovery or reconnect alone; the local user must take an explicit recovery or re-pairing action.
 
 ## Safety Rules
 

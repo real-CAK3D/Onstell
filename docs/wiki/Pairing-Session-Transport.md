@@ -43,6 +43,8 @@ Trust records should store:
 
 Trust records are local decisions. If one machine revokes or blocks another, that local app must refuse sessions from the blocked peer even if the peer still considers itself trusted.
 
+Milestone 3 defines this shape in `apps/desktop/src/pairingTrustStore.ts` as a fake local-only prototype. The identity record explicitly reports that key material is `not-created`; no private key, socket, pairing exchange, nonce, session key, or cryptographic frame is generated in this phase.
+
 ## Pairing Handshake
 
 The first real pairing flow should be:
