@@ -63,6 +63,8 @@ Routing rules:
 
 The first implementation should prefer a narrow supported-key set over broad unreliable key mapping. Unknown keys should pass through locally until their OS mappings are tested.
 
+Milestone 3 models keyboard normalization in `apps/desktop/src/keyboardModel.ts`. The model accepts simulated physical key codes and modifier state, updates held-key state, and returns either a forwardable keyboard event or a blocked reason. It intentionally does not represent typed text, composed characters, IME payloads, clipboard data, global hotkeys, or platform capture handles.
+
 ## Emergency Release
 
 Emergency release is mandatory before global capture ships.
