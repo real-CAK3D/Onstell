@@ -465,11 +465,13 @@ input[type="range"] {
 }
 
 .readiness-item[data-readiness="missing"],
+.readiness-item[data-readiness="unknown"],
 .readiness-item[data-readiness="design-only"] {
   border-color: rgba(255, 209, 102, .24);
 }
 
 .readiness-item[data-readiness="missing"] strong,
+.readiness-item[data-readiness="unknown"] strong,
 .readiness-item[data-readiness="design-only"] strong {
   color: var(--amber);
 }

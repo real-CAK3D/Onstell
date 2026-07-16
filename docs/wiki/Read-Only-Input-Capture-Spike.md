@@ -19,6 +19,7 @@ No production or beta build may enable read-only capture by default. The only su
 - The spike is opt-in only through the development flag.
 - The default state is disabled.
 - The widget readiness panel must continue to show that capture is design-only or development-only.
+- Permission readiness must be represented by the stub permission model before any OS permission prompt appears.
 - Any future capture module must fail closed when the guard is disabled.
 - Capture code must live behind a narrow interface that returns sanitized event metadata only.
 - Any debug log must be console-only unless a separate explicit file-log flag is reviewed.

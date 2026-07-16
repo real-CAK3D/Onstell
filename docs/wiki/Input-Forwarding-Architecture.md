@@ -93,6 +93,8 @@ Milestone 2 exposes the Release Input command in the widget and tray as a safe s
 
 Input capture and injection require explicit user-facing permission checks.
 
+Milestone 3 permission readiness lives in `apps/desktop/src/permissionModel.ts`. It is a stub model only: it can represent `stubbed`, `unknown`, `missing`, `blocked`, and `granted` states for capture and injection, but it must not request OS permissions, register hooks, inject input, or show native permission prompts.
+
 Windows:
 
 - Capture candidate: Raw Input for keyboard/mouse HID events.
@@ -176,6 +178,7 @@ Do not enable real forwarding until all gates pass:
 - Emergency release shortcut is registered and tested after the no-hook UI stub phase.
 - Release-all behavior is tested on disconnect, crash, and target switch.
 - Permissions are detected and explained before capture starts.
+- Permission prompts are only shown after a user-visible warning and an explicit gated prototype path.
 - The app has a visible active-target indicator.
 - Blocked devices cannot be selected by discovery or layout routing.
 - Automated tests cover trust gating and release state transitions.
