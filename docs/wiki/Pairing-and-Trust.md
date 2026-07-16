@@ -30,6 +30,8 @@ No real network pairing, cryptographic key exchange, input forwarding, or clipbo
 5. Sessions use authenticated encrypted transport.
 6. Trust can be revoked locally at any time.
 
+See [Pairing Session Transport](Pairing-Session-Transport) for the first LAN session shape, handshake expectations, reconnect rules, and blocked-device behavior.
+
 ## Minimum Device Identity
 
 A future trusted device record should include:
@@ -50,4 +52,4 @@ A future trusted device record should include:
 - A pairing code must be short enough to compare manually but strong enough to detect local spoofing attempts.
 - Disconnect must release held keys and pointer buttons.
 - Emergency release must work even when the active remote device is misbehaving.
-
+- Blocked or revoked devices must not reconnect silently.

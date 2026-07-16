@@ -15,6 +15,8 @@ Onstell will eventually forward keyboard and pointer input. That means the secur
 
 See [Pairing and Trust](Pairing-and-Trust) for the current placeholder state model and the future real pairing flow.
 
+See [Pairing Session Transport](Pairing-Session-Transport) for the trusted LAN session design, authenticated handshake, replay checks, downgrade checks, and blocked-device reconnect rules.
+
 See [Input Forwarding Architecture](Input-Forwarding-Architecture) for controller/follower roles, pointer edge transfer, keyboard routing, emergency release behavior, and OS permission requirements.
 
 See [Read-Only Input Capture Spike](Read-Only-Input-Capture-Spike) for the development-only guard, permitted sanitized event fields, forbidden logs, and rollback steps before any capture experiment starts.

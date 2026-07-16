@@ -8,6 +8,7 @@ Onstell is a cross-platform software KVM project for arranging several physical 
 - [Widget Milestone](Widget-Milestone)
 - [Device Desktop Mode](Device-Desktop-Mode)
 - [Pairing and Trust](Pairing-and-Trust)
+- [Pairing Session Transport](Pairing-Session-Transport)
 - [Input Forwarding Architecture](Input-Forwarding-Architecture)
 - [Read-Only Input Capture Spike](Read-Only-Input-Capture-Spike)
 - [Loopback Follower Simulator](Loopback-Follower-Simulator)

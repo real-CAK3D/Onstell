@@ -144,6 +144,8 @@ The read-only capture spike must follow [Read-Only Input Capture Spike](Read-Onl
 
 The loopback phase must follow [Loopback Follower Simulator](Loopback-Follower-Simulator): in-process, fake-only, and gated by the same trust rules as normal routing.
 
+The first trusted LAN phase must follow [Pairing Session Transport](Pairing-Session-Transport) before accepting any remote routing message.
+
 ## Routing State Machine
 
 The milestone 2 routing model lives in `apps/desktop/src/routingModel.ts`. It is intentionally pure TypeScript and must not import OS capture, injection, clipboard, transport, or Tauri APIs.
@@ -166,6 +168,7 @@ Do not enable real forwarding until all gates pass:
 
 - Pairing state is trusted.
 - Session transport is authenticated and encrypted.
+- Session handshake rejects replay, downgrade, blocked, revoked, pending, unknown, and unpaired peers.
 - Emergency release shortcut is registered and tested after the no-hook UI stub phase.
 - Release-all behavior is tested on disconnect, crash, and target switch.
 - Permissions are detected and explained before capture starts.
