@@ -15,6 +15,8 @@ struct OnstellStatus {
     seamless_enabled: bool,
     connected: bool,
     clipboard_sync: String,
+    routing_status: String,
+    input_released: bool,
 }
 
 #[tauri::command]
@@ -27,6 +29,8 @@ fn get_status() -> OnstellStatus {
         seamless_enabled: true,
         connected: false,
         clipboard_sync: "Design only".to_string(),
+        routing_status: "Released".to_string(),
+        input_released: true,
     }
 }
 
@@ -48,6 +52,11 @@ fn open_widget_settings(app: AppHandle) -> Result<(), String> {
     show_main_window(&app)?;
     app.emit("onstell://open-settings", ())
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn release_input(app: AppHandle) -> Result<(), String> {
+    emit_input_released(&app)
 }
 
 #[tauri::command]
@@ -78,16 +87,23 @@ fn reset_main_window_position(app: &AppHandle) -> Result<(), String> {
     show_main_window(app)
 }
 
+fn emit_input_released(app: &AppHandle) -> Result<(), String> {
+    app.emit("onstell://input-released", ())
+        .map_err(|error| error.to_string())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let show = MenuItem::with_id(app, "show", "Show floating widget", true, None::<&str>)?;
             let hide = MenuItem::with_id(app, "hide", "Hide floating widget", true, None::<&str>)?;
+            let release =
+                MenuItem::with_id(app, "release-input", "Release Input", true, None::<&str>)?;
             let reset =
                 MenuItem::with_id(app, "reset", "Reset widget position", true, None::<&str>)?;
             let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit Onstell", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show, &hide, &reset, &settings, &quit])?;
+            let menu = Menu::with_items(app, &[&show, &hide, &release, &reset, &settings, &quit])?;
 
             TrayIconBuilder::with_id("onstell-tray")
                 .tooltip("Onstell")
@@ -100,6 +116,9 @@ pub fn run() {
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.hide();
                         }
+                    }
+                    "release-input" => {
+                        let _ = emit_input_released(app);
                     }
                     "reset" => {
                         let _ = reset_main_window_position(app);
@@ -130,6 +149,7 @@ pub fn run() {
             show_widget,
             hide_widget,
             open_widget_settings,
+            release_input,
             reset_widget_position,
             quit_app
         ])

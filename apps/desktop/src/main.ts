@@ -44,6 +44,8 @@ type OnstellStatus = {
   seamlessEnabled: boolean;
   connected: boolean;
   clipboardSync: string;
+  routingStatus: string;
+  inputReleased: boolean;
 };
 
 type ReadinessState = "ready" | "missing" | "blocked" | "design-only";
@@ -65,7 +67,9 @@ const fallbackStatus: OnstellStatus = {
   latencyMs: 3,
   seamlessEnabled: true,
   connected: false,
-  clipboardSync: "Design only"
+  clipboardSync: "Design only",
+  routingStatus: "Released",
+  inputReleased: true
 };
 
 const settingsKey = "onstell.widget.settings";
@@ -143,7 +147,7 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
           <div class="copy">
             <div class="eyebrow"><span class="dot ${status.connected ? "is-online" : "is-placeholder"}"></span>Device Desktop mode</div>
             <div class="title">Onstell</div>
-            <div class="subline">${escapeHtml(activeDeviceName)} active - ${escapeHtml(activeMonitorName)} - ${status.connected ? "connected" : "placeholder state"}</div>
+            <div class="subline">${escapeHtml(activeDeviceName)} active - ${escapeHtml(activeMonitorName)} - ${routingStatusLabel(status)}</div>
           </div>
           <div class="actions">
             <button class="pill" type="button" data-toggle-seamless>${status.seamlessEnabled ? "Enabled" : "Disabled"}</button>
@@ -157,6 +161,14 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
           <article><span>Latency</span><strong>${status.latencyMs === null ? "N/A" : `${status.latencyMs} ms`}</strong></article>
           <article><span>Layer</span><strong data-layer-label>${labelForLayer(settings.layerMode)}</strong></article>
           <article data-metric="clipboard"><span>Clipboard</span><strong>${escapeHtml(status.clipboardSync)}</strong></article>
+        </div>
+
+        <div class="release-bar" data-released="${status.inputReleased}">
+          <div>
+            <span>Input state</span>
+            <strong>${escapeHtml(status.routingStatus)}</strong>
+          </div>
+          <button class="pill" type="button" data-release-input>Release Input</button>
         </div>
 
         <div class="settings-panel" role="dialog" aria-label="Quick widget settings">
@@ -238,6 +250,11 @@ function readinessLabel(state: ReadinessState) {
     "design-only": "Design only"
   };
   return labels[state];
+}
+
+function routingStatusLabel(status: OnstellStatus) {
+  if (status.inputReleased) return "input released";
+  return status.connected ? "connected" : "not forwarding";
 }
 
 function renderDiscoveryPanel(discovery: DiscoverySnapshot) {
@@ -452,7 +469,7 @@ async function applyNativeLayer(settings: WidgetSettings) {
   }
 }
 
-async function invokeNativeAction(command: "hide_widget" | "open_widget_settings" | "reset_widget_position" | "quit_app") {
+async function invokeNativeAction(command: "hide_widget" | "open_widget_settings" | "release_input" | "reset_widget_position" | "quit_app") {
   try {
     await invoke(command);
   } catch {
@@ -502,6 +519,13 @@ function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, stat
 
   document.querySelector<HTMLElement>("[data-disconnect]")?.addEventListener("click", async () => {
     await invokeNativeAction("hide_widget");
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-release-input]")?.addEventListener("click", async () => {
+    status.inputReleased = true;
+    status.routingStatus = "Released";
+    await invokeNativeAction("release_input");
+    await rerenderWidget(false);
   });
 
   document.querySelectorAll<HTMLInputElement>("[data-setting]").forEach((control) => {
@@ -768,6 +792,13 @@ async function boot() {
   wireInteractions(settings, profile, status, discovery);
   void listen("onstell://open-settings", () => {
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
+  });
+  void listen("onstell://input-released", () => {
+    status.inputReleased = true;
+    status.routingStatus = "Released";
+    render(status, settings, profile, discovery);
+    applySettings(settings);
+    wireInteractions(settings, profile, status, discovery);
   });
 }
 

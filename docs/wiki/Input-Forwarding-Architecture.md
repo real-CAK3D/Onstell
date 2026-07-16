@@ -82,8 +82,10 @@ Behavior:
 Fallbacks:
 
 - Tray/menu item: Release Input.
-- Widget button: Release.
+- Widget button: Release Input.
 - Process exit handler: release all locally tracked down states before shutdown.
+
+Milestone 2 exposes the Release Input command in the widget and tray as a safe stub before real input forwarding exists. The default shortcut above is documented for the future release gate, but no global hotkey should be registered until the read-only capture and release-all behavior are tested.
 
 ## Permission Model
 
@@ -160,7 +162,7 @@ Do not enable real forwarding until all gates pass:
 
 - Pairing state is trusted.
 - Session transport is authenticated and encrypted.
-- Emergency release shortcut is registered and tested.
+- Emergency release shortcut is registered and tested after the no-hook UI stub phase.
 - Release-all behavior is tested on disconnect, crash, and target switch.
 - Permissions are detected and explained before capture starts.
 - The app has a visible active-target indicator.
