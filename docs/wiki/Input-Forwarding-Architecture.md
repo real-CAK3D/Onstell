@@ -142,6 +142,8 @@ Initial recommendation:
 
 The read-only capture spike must follow [Read-Only Input Capture Spike](Read-Only-Input-Capture-Spike) before any capture crate or OS hook is added.
 
+The loopback phase must follow [Loopback Follower Simulator](Loopback-Follower-Simulator): in-process, fake-only, and gated by the same trust rules as normal routing.
+
 ## Routing State Machine
 
 The milestone 2 routing model lives in `apps/desktop/src/routingModel.ts`. It is intentionally pure TypeScript and must not import OS capture, injection, clipboard, transport, or Tauri APIs.

@@ -11,9 +11,10 @@
     "build": "npm --workspace apps/desktop run build",
     "tauri:dev": "npm --workspace apps/desktop run tauri:dev",
     "tauri:build": "npm --workspace apps/desktop run tauri:build",
-    "check": "npm --workspace apps/desktop run check && npm run test:routing && npm run test:input-guard",
+    "check": "npm --workspace apps/desktop run check && npm run test:routing && npm run test:input-guard && npm run test:loopback",
     "test:routing": "node scripts/run-routing-tests.mjs",
-    "test:input-guard": "node scripts/run-input-guard-tests.mjs"
+    "test:input-guard": "node scripts/run-input-guard-tests.mjs",
+    "test:loopback": "node scripts/run-loopback-tests.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -10,6 +10,7 @@ Onstell is a cross-platform software KVM project for arranging several physical 
 - [Pairing and Trust](Pairing-and-Trust)
 - [Input Forwarding Architecture](Input-Forwarding-Architecture)
 - [Read-Only Input Capture Spike](Read-Only-Input-Capture-Spike)
+- [Loopback Follower Simulator](Loopback-Follower-Simulator)
 - [Clipboard Sync Design](Clipboard-Sync-Design)
 - [Virtual Monitor Mode](Virtual-Monitor-Mode)
 - [Release and Packages](Release-and-Packages)

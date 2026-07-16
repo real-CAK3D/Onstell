@@ -20,6 +20,11 @@ import {
   type PairingState
 } from "./layoutModel";
 import { loadLayoutProfile, saveLayoutProfile } from "./layoutStorage";
+import {
+  createLoopbackFollowerSnapshot,
+  dispatchLoopbackFollowerEvent,
+  type LoopbackFollowerSnapshot
+} from "./loopbackFollower";
 import "./styles.css";
 
 type WidgetSettings = {
@@ -130,7 +135,8 @@ function render(
   settings: WidgetSettings,
   profile: LayoutProfile,
   discovery: DiscoverySnapshot,
-  inputCapture: InputCaptureGuard
+  inputCapture: InputCaptureGuard,
+  loopback: LoopbackFollowerSnapshot
 ) {
   const activeDevice = findDevice(profile, profile.activeDeviceId);
   const activeMonitor = findMonitor(profile, profile.activeMonitorId);
@@ -212,10 +218,52 @@ function render(
 
           ${renderDiscoveryPanel(discovery)}
 
+          ${renderLoopbackPanel(loopback)}
+
           ${renderLayoutEditor(profile)}
         </div>
       </section>
     </main>
+  `;
+}
+
+function renderLoopbackPanel(loopback: LoopbackFollowerSnapshot) {
+  return `
+    <section class="loopback-panel" aria-label="Local loopback follower simulator">
+      <header>
+        <div>
+          <strong>Loopback follower</strong>
+          <span>${loopback.fakeOnly ? "In-process fake only" : "External"}</span>
+        </div>
+        <strong data-loopback-state="${loopback.connected ? "connected" : "idle"}">${loopback.connected ? "Connected" : "Idle"}</strong>
+      </header>
+      <div class="loopback-status">
+        <article>
+          <span>Target</span>
+          <strong>${escapeHtml(loopback.activeTargetDeviceId ?? loopback.blockedReason ?? "None")}</strong>
+        </article>
+        <article>
+          <span>Events</span>
+          <strong>${loopback.receivedEvents}</strong>
+        </article>
+        <article>
+          <span>Held</span>
+          <strong>${loopback.heldKeys.length + loopback.heldPointerButtons.length}</strong>
+        </article>
+        <article>
+          <span>Release</span>
+          <strong>${loopback.releasedEvents}</strong>
+        </article>
+      </div>
+      <p>${escapeHtml(loopback.lastMessage)}</p>
+      <div class="loopback-actions">
+        <button class="pill" type="button" data-loopback-trust>Trust fake Pi</button>
+        <button class="pill" type="button" data-loopback-connect>Connect</button>
+        <button class="pill" type="button" data-loopback-send>Send fake input</button>
+        <button class="pill" type="button" data-loopback-target>Target HP</button>
+        <button class="pill danger" type="button" data-loopback-release>Release</button>
+      </div>
+    </section>
   `;
 }
 
@@ -497,28 +545,35 @@ function wireInteractions(
   profile: LayoutProfile,
   status: OnstellStatus,
   discovery: DiscoverySnapshot,
-  inputCapture: InputCaptureGuard
+  inputCapture: InputCaptureGuard,
+  loopback: LoopbackFollowerSnapshot
 ) {
   const widget = document.querySelector<HTMLElement>(".widget")!;
   const desktop = document.querySelector<HTMLElement>(".desktop-shell")!;
   const rerenderWidget = async (menuOpen = true) => {
-    render(status, settings, profile, discovery, inputCapture);
+    render(status, settings, profile, discovery, inputCapture, loopback);
     applySettings(settings);
     await applyNativeLayer(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture);
+    wireInteractions(settings, profile, status, discovery, inputCapture, loopback);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = String(menuOpen);
   };
   const rerenderForLayoutChange = () => {
     saveLayoutProfile(profile);
-    render(status, settings, profile, discovery, inputCapture);
+    render(status, settings, profile, discovery, inputCapture, loopback);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture);
+    wireInteractions(settings, profile, status, discovery, inputCapture, loopback);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
   const rerenderForDiscoveryChange = () => {
-    render(status, settings, profile, discovery, inputCapture);
+    render(status, settings, profile, discovery, inputCapture, loopback);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture);
+    wireInteractions(settings, profile, status, discovery, inputCapture, loopback);
+    document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
+  };
+  const rerenderForLoopbackChange = () => {
+    render(status, settings, profile, discovery, inputCapture, loopback);
+    applySettings(settings);
+    wireInteractions(settings, profile, status, discovery, inputCapture, loopback);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
 
@@ -589,6 +644,47 @@ function wireInteractions(
     applyDiscoveryToProfile(profile, discovery);
     saveLayoutProfile(profile);
     rerenderForLayoutChange();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-loopback-trust]")?.addEventListener("click", () => {
+    const pi = findDevice(profile, "raspberry-pi");
+    if (!pi) return;
+    pi.availability = "available";
+    pi.pairingState = "trusted";
+    pi.lastSeen = new Date().toISOString();
+    saveLayoutProfile(profile);
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "release", reason: "manual-loopback-release" }, profile));
+    loopback.lastMessage = "Fake Raspberry Pi trusted for local loopback only";
+    rerenderForLoopbackChange();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-loopback-connect]")?.addEventListener("click", () => {
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "connect", targetDeviceId: "raspberry-pi", monitorId: "pi-display" }, profile));
+    rerenderForLoopbackChange();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-loopback-send]")?.addEventListener("click", () => {
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "key-down", code: "KeyA" }, profile));
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "pointer-down", button: "left" }, profile));
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "pointer-move", deltaX: 18, deltaY: -6 }, profile));
+    rerenderForLoopbackChange();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-loopback-target]")?.addEventListener("click", () => {
+    const hp = findDevice(profile, "hp-laptop");
+    if (hp) {
+      hp.availability = "available";
+      hp.pairingState = "trusted";
+      hp.lastSeen = new Date().toISOString();
+      saveLayoutProfile(profile);
+    }
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "target-change", targetDeviceId: "hp-laptop", monitorId: "hp-internal" }, profile));
+    rerenderForLoopbackChange();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-loopback-release]")?.addEventListener("click", () => {
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "release", reason: "emergency-release" }, profile));
+    rerenderForLoopbackChange();
   });
 
   document.querySelector<HTMLSelectElement>("[data-layout-device]")?.addEventListener("change", (event) => {
@@ -799,20 +895,22 @@ async function boot() {
   const profile = loadLayoutProfile();
   const discovery = createDiscoverySnapshot(profile);
   const inputCapture = readOnlyCaptureGuard(import.meta.env, import.meta.env.MODE);
+  const loopback = createLoopbackFollowerSnapshot();
   const status = await getStatus();
-  render(status, settings, profile, discovery, inputCapture);
+  render(status, settings, profile, discovery, inputCapture, loopback);
   applySettings(settings);
   await applyNativeLayer(settings);
-  wireInteractions(settings, profile, status, discovery, inputCapture);
+  wireInteractions(settings, profile, status, discovery, inputCapture, loopback);
   void listen("onstell://open-settings", () => {
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   });
   void listen("onstell://input-released", () => {
     status.inputReleased = true;
     status.routingStatus = "Released";
-    render(status, settings, profile, discovery, inputCapture);
+    Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "release", reason: "emergency-release" }, profile));
+    render(status, settings, profile, discovery, inputCapture, loopback);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture);
+    wireInteractions(settings, profile, status, discovery, inputCapture, loopback);
   });
 }
 
