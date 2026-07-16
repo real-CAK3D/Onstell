@@ -150,6 +150,8 @@ The first trusted LAN phase must follow [Pairing Session Transport](Pairing-Sess
 
 The milestone 2 routing model lives in `apps/desktop/src/routingModel.ts`. It is intentionally pure TypeScript and must not import OS capture, injection, clipboard, transport, or Tauri APIs.
 
+The Milestone 3 input event boundary lives in `apps/desktop/src/inputEvents.ts`. It defines normalized keyboard, pointer, wheel, and release-all events plus a fake in-memory adapter. The default adapter must not capture global input, suppress local input, inject input, read clipboard data, or use network transport.
+
 Current states:
 
 - `local`: no remote target is active.
