@@ -47,6 +47,23 @@ SHA256SUMS.txt
 RELEASE-NOTES.md
 ```
 
+## Beta.4 Checklist
+
+Use [docs/releases/v0.1.0-beta.4.md](docs/releases/v0.1.0-beta.4.md) before publishing `v0.1.0-beta.4`.
+
+Beta.4 must clearly say:
+
+- It is not a working KVM release.
+- Routing is simulated.
+- Input capture is not active for normal users.
+- LAN pairing/session transport is design-only.
+- Clipboard sync is not implemented.
+- The loopback follower is in-process and fake.
+
+The release workflow should attach `SHA256SUMS.txt`, `RELEASE-NOTES.md`, `release-assets.json`, and native package artifacts when the draft release is created.
+
+If a workflow creates a failed or duplicate draft release, delete that draft before retrying. Keep `v0.1.0-beta.3` available as the first clean smoke-test release.
+
 ## Trust
 
 Before unattended updates or one-click installers:
@@ -59,4 +76,3 @@ Before unattended updates or one-click installers:
 - Keep update checks disableable.
 
 Do not commit certificates, private keys, passwords, or tokens.
-

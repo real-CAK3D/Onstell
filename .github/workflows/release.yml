@@ -111,15 +111,20 @@ jobs:
           echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
           echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
       - name: Show planned release assets
+        shell: bash
         run: |
           mkdir -p dist
-          cat > dist/RELEASE-NOTES.md <<'NOTES'
+          if [ -f "docs/releases/${{ steps.meta.outputs.version }}.md" ]; then
+            cp "docs/releases/${{ steps.meta.outputs.version }}.md" dist/RELEASE-NOTES.md
+          else
+            cat > dist/RELEASE-NOTES.md <<'NOTES'
           # Onstell development release
 
           This is an early development release for smoke testing the native Onstell desktop shell.
 
-          The widget UI is present, while cross-platform KVM transport and pairing are still planned work.
+          This is not a working KVM release yet. Routing, capture, transport, and clipboard behavior remain simulated or design-only unless the release notes say otherwise.
           NOTES
+          fi
           cp packaging/release-assets.json dist/release-assets.json
           ls -la dist
       - uses: actions/upload-artifact@v4

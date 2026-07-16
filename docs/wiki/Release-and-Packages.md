@@ -50,5 +50,8 @@ Provide a universal DMG for Intel and Apple Silicon Macs.
 
 ## Current Release Workflow
 
-The current GitHub workflow creates a release-plan artifact and can create a draft GitHub Release with placeholder metadata. Real native assets will be attached after the Tauri/native app scaffold exists.
+The current GitHub workflow builds Windows, Linux x64, and macOS Tauri bundles, creates `SHA256SUMS.txt`, and can create a draft GitHub Release.
 
+Beta.3 remains the first clean desktop-shell smoke-test release. Beta.4 should use [v0.1.0-beta.4 release checklist](../releases/v0.1.0-beta.4.md) and must clearly label routing, capture, transport, and clipboard behavior as simulated or design-only.
+
+Failed or duplicate draft releases should be deleted before retrying so the Releases page stays clean.
