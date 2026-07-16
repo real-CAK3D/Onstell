@@ -56,6 +56,24 @@ const tests: TestCase[] = [
       const gate = canForwardToDevice(profile.devices[0]);
       assertEqual(gate.ok, false);
       if (!gate.ok) assertEqual(gate.reason, "controller-target");
+
+      const state = transitionRouting(createRoutingSnapshot(), { type: "edge-crossed", targetDeviceId: "main-pc", monitorId: "main-display" }, profile);
+      assertEqual(state.state, "blocked");
+      assertEqual(state.reason, "controller-target");
+    }
+  },
+  {
+    name: "local devices cannot become follower targets",
+    run: () => {
+      const profile = profileWithFollower({ availability: "available", pairingState: "trusted" });
+      profile.devices[1].availability = "local";
+      const gate = canForwardToDevice(profile.devices[1]);
+      assertEqual(gate.ok, false);
+      if (!gate.ok) assertEqual(gate.reason, "local-target");
+
+      const state = transitionRouting(createRoutingSnapshot(), { type: "edge-crossed", targetDeviceId: "target", monitorId: "target-display" }, profile);
+      assertEqual(state.state, "blocked");
+      assertEqual(state.reason, "local-target");
     }
   },
   {

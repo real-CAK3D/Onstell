@@ -13,6 +13,8 @@ No milestone 1 code should capture global input, suppress local input, inject re
 
 Only a trusted follower can become the active target. Unpaired, pending, blocked, offline, or unknown devices must never receive input.
 
+Milestone 3 starts with fixed controller mode. The local controller device is the only source of simulated input events, and devices marked `controller` or `local` must never be selected as follower targets.
+
 ## Event Pipeline
 
 1. Capture pointer position and button/key state on the controller.

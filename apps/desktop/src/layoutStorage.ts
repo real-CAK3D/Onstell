@@ -45,6 +45,7 @@ function normalizeLayoutProfile(value: unknown): LayoutProfile {
   return {
     id: stringOr(value.id, fallback.id),
     name: stringOr(value.name, fallback.name),
+    controllerMode: value.controllerMode === "fixed-controller" ? value.controllerMode : fallback.controllerMode,
     activeDeviceId: activeDevice.id,
     activeMonitorId: stringOr(value.activeMonitorId, firstMonitor?.id ?? fallback.activeMonitorId),
     devices,

@@ -1,5 +1,7 @@
 export type DeviceRole = "controller" | "follower";
 
+export type ControllerMode = "fixed-controller";
+
 export type DeviceAvailability = "local" | "available" | "offline" | "blocked" | "unknown";
 
 export type PairingState = "local" | "unpaired" | "pending" | "trusted" | "blocked";
@@ -43,6 +45,7 @@ export type LayoutEdge = {
 export type LayoutProfile = {
   id: string;
   name: string;
+  controllerMode: ControllerMode;
   activeDeviceId: string;
   activeMonitorId: string;
   devices: OnstellDevice[];
@@ -53,6 +56,7 @@ export type LayoutProfile = {
 export const defaultLayoutProfile: LayoutProfile = {
   id: "desk-laptop-closed",
   name: "Desk - Laptop Closed",
+  controllerMode: "fixed-controller",
   activeDeviceId: "main-pc",
   activeMonitorId: "main-display",
   updatedAt: "2026-07-15T00:00:00.000Z",
@@ -134,6 +138,10 @@ export function findDevice(profile: LayoutProfile, deviceId: string) {
   return profile.devices.find((device) => device.id === deviceId) ?? null;
 }
 
+export function getControllerDevice(profile: LayoutProfile) {
+  return profile.devices.find((device) => device.role === "controller" && device.availability === "local") ?? null;
+}
+
 export function findMonitor(profile: LayoutProfile, monitorId: string) {
   for (const device of profile.devices) {
     const monitor = device.monitors.find((candidate) => candidate.id === monitorId);
@@ -162,6 +170,13 @@ export function pairingLabel(pairingState: PairingState) {
     blocked: "Blocked"
   };
   return labels[pairingState];
+}
+
+export function controllerModeLabel(mode: ControllerMode) {
+  const labels: Record<ControllerMode, string> = {
+    "fixed-controller": "Fixed controller"
+  };
+  return labels[mode];
 }
 
 export function cloneDefaultLayoutProfile(): LayoutProfile {

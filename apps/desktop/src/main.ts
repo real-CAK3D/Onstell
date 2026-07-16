@@ -17,7 +17,9 @@ import {
   type LayoutProfile,
   type OnstellDevice,
   type OnstellMonitor,
-  type PairingState
+  type PairingState,
+  controllerModeLabel,
+  getControllerDevice
 } from "./layoutModel";
 import { loadLayoutProfile, saveLayoutProfile } from "./layoutStorage";
 import {
@@ -140,6 +142,7 @@ function render(
 ) {
   const activeDevice = findDevice(profile, profile.activeDeviceId);
   const activeMonitor = findMonitor(profile, profile.activeMonitorId);
+  const controllerDevice = getControllerDevice(profile);
   const activeDeviceName = activeDevice?.name ?? status.activeDevice;
   const activeMonitorName = activeMonitor?.monitor.name ?? status.activeMonitor;
 
@@ -158,7 +161,7 @@ function render(
         <div class="widget-main" data-drag-handle="true">
           <div class="logo" aria-hidden="true">O</div>
           <div class="copy">
-            <div class="eyebrow"><span class="dot ${status.connected ? "is-online" : "is-placeholder"}"></span>Device Desktop mode</div>
+            <div class="eyebrow"><span class="dot ${status.connected ? "is-online" : "is-placeholder"}"></span>Device Desktop mode - ${controllerModeLabel(profile.controllerMode)}</div>
             <div class="title">Onstell</div>
             <div class="subline">${escapeHtml(activeDeviceName)} active - ${escapeHtml(activeMonitorName)} - ${routingStatusLabel(status)}</div>
           </div>
@@ -173,7 +176,7 @@ function render(
           <article><span>Profile</span><strong>${escapeHtml(profile.name)}</strong></article>
           <article><span>Latency</span><strong>${status.latencyMs === null ? "N/A" : `${status.latencyMs} ms`}</strong></article>
           <article><span>Layer</span><strong data-layer-label>${labelForLayer(settings.layerMode)}</strong></article>
-          <article data-metric="clipboard"><span>Clipboard</span><strong>${escapeHtml(status.clipboardSync)}</strong></article>
+          <article data-metric="controller"><span>Controller</span><strong>${escapeHtml(controllerDevice?.name ?? "Local device")}</strong></article>
         </div>
 
         <div class="release-bar" data-released="${status.inputReleased}">
@@ -269,6 +272,7 @@ function renderLoopbackPanel(loopback: LoopbackFollowerSnapshot) {
 
 function renderReadinessPanel(status: OnstellStatus, inputCapture: InputCaptureGuard) {
   const items: Array<{ label: string; detail: string; state: ReadinessState }> = [
+    { label: "Controller mode", detail: "Fixed local controller", state: "ready" },
     { label: "Input capture", detail: inputCapture.label, state: inputCapture.enabled ? "missing" : "design-only" },
     { label: "Input injection", detail: "Disabled until release gate", state: "blocked" },
     { label: "Accessibility", detail: "Permission check pending", state: "missing" },

@@ -296,7 +296,7 @@ button {
   overflow-wrap: anywhere;
 }
 
-.metrics article[data-metric="clipboard"] strong {
+.metrics article[data-metric="controller"] strong {
   color: var(--amber);
 }
 
