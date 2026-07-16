@@ -7,6 +7,7 @@ import {
   scanFakeDiscovery,
   type DiscoverySnapshot
 } from "./discoveryService";
+import { readOnlyCaptureGuard, type InputCaptureGuard } from "./inputCaptureGuard";
 import {
   availabilityLabel,
   findDevice,
@@ -124,7 +125,13 @@ function booleanOr(value: unknown, fallback: boolean) {
   return typeof value === "boolean" ? value : fallback;
 }
 
-function render(status: OnstellStatus, settings: WidgetSettings, profile: LayoutProfile, discovery: DiscoverySnapshot) {
+function render(
+  status: OnstellStatus,
+  settings: WidgetSettings,
+  profile: LayoutProfile,
+  discovery: DiscoverySnapshot,
+  inputCapture: InputCaptureGuard
+) {
   const activeDevice = findDevice(profile, profile.activeDeviceId);
   const activeMonitor = findMonitor(profile, profile.activeMonitorId);
   const activeDeviceName = activeDevice?.name ?? status.activeDevice;
@@ -201,7 +208,7 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
             <button class="pill danger" type="button" data-reset-settings>Reset widget</button>
           </div>
 
-          ${renderReadinessPanel(status)}
+          ${renderReadinessPanel(status, inputCapture)}
 
           ${renderDiscoveryPanel(discovery)}
 
@@ -212,9 +219,9 @@ function render(status: OnstellStatus, settings: WidgetSettings, profile: Layout
   `;
 }
 
-function renderReadinessPanel(status: OnstellStatus) {
+function renderReadinessPanel(status: OnstellStatus, inputCapture: InputCaptureGuard) {
   const items: Array<{ label: string; detail: string; state: ReadinessState }> = [
-    { label: "Input capture", detail: "No global listener", state: "design-only" },
+    { label: "Input capture", detail: inputCapture.label, state: inputCapture.enabled ? "missing" : "design-only" },
     { label: "Input injection", detail: "Disabled until release gate", state: "blocked" },
     { label: "Accessibility", detail: "Permission check pending", state: "missing" },
     { label: "Clipboard", detail: status.clipboardSync, state: "design-only" },
@@ -485,27 +492,33 @@ async function getStatus(): Promise<OnstellStatus> {
   }
 }
 
-function wireInteractions(settings: WidgetSettings, profile: LayoutProfile, status: OnstellStatus, discovery: DiscoverySnapshot) {
+function wireInteractions(
+  settings: WidgetSettings,
+  profile: LayoutProfile,
+  status: OnstellStatus,
+  discovery: DiscoverySnapshot,
+  inputCapture: InputCaptureGuard
+) {
   const widget = document.querySelector<HTMLElement>(".widget")!;
   const desktop = document.querySelector<HTMLElement>(".desktop-shell")!;
   const rerenderWidget = async (menuOpen = true) => {
-    render(status, settings, profile, discovery);
+    render(status, settings, profile, discovery, inputCapture);
     applySettings(settings);
     await applyNativeLayer(settings);
-    wireInteractions(settings, profile, status, discovery);
+    wireInteractions(settings, profile, status, discovery, inputCapture);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = String(menuOpen);
   };
   const rerenderForLayoutChange = () => {
     saveLayoutProfile(profile);
-    render(status, settings, profile, discovery);
+    render(status, settings, profile, discovery, inputCapture);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery);
+    wireInteractions(settings, profile, status, discovery, inputCapture);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
   const rerenderForDiscoveryChange = () => {
-    render(status, settings, profile, discovery);
+    render(status, settings, profile, discovery, inputCapture);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery);
+    wireInteractions(settings, profile, status, discovery, inputCapture);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
 
@@ -785,20 +798,21 @@ async function boot() {
   const settings = loadSettings();
   const profile = loadLayoutProfile();
   const discovery = createDiscoverySnapshot(profile);
+  const inputCapture = readOnlyCaptureGuard(import.meta.env, import.meta.env.MODE);
   const status = await getStatus();
-  render(status, settings, profile, discovery);
+  render(status, settings, profile, discovery, inputCapture);
   applySettings(settings);
   await applyNativeLayer(settings);
-  wireInteractions(settings, profile, status, discovery);
+  wireInteractions(settings, profile, status, discovery, inputCapture);
   void listen("onstell://open-settings", () => {
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   });
   void listen("onstell://input-released", () => {
     status.inputReleased = true;
     status.routingStatus = "Released";
-    render(status, settings, profile, discovery);
+    render(status, settings, profile, discovery, inputCapture);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery);
+    wireInteractions(settings, profile, status, discovery, inputCapture);
   });
 }
 

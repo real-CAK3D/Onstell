@@ -17,6 +17,8 @@ See [Pairing and Trust](Pairing-and-Trust) for the current placeholder state mod
 
 See [Input Forwarding Architecture](Input-Forwarding-Architecture) for controller/follower roles, pointer edge transfer, keyboard routing, emergency release behavior, and OS permission requirements.
 
+See [Read-Only Input Capture Spike](Read-Only-Input-Capture-Spike) for the development-only guard, permitted sanitized event fields, forbidden logs, and rollback steps before any capture experiment starts.
+
 See [Clipboard Sync Design](Clipboard-Sync-Design) for clipboard opt-in behavior, payload limits, and privacy rules.
 
 ## Trust States

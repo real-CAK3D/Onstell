@@ -140,6 +140,8 @@ Initial recommendation:
 6. Multi-device routing: support target switching and monitor-edge hysteresis.
 7. Clipboard/file transfer: design separately after input routing and trust revocation are stable.
 
+The read-only capture spike must follow [Read-Only Input Capture Spike](Read-Only-Input-Capture-Spike) before any capture crate or OS hook is added.
+
 ## Routing State Machine
 
 The milestone 2 routing model lives in `apps/desktop/src/routingModel.ts`. It is intentionally pure TypeScript and must not import OS capture, injection, clipboard, transport, or Tauri APIs.
@@ -168,6 +170,7 @@ Do not enable real forwarding until all gates pass:
 - The app has a visible active-target indicator.
 - Blocked devices cannot be selected by discovery or layout routing.
 - Automated tests cover trust gating and release state transitions.
+- Read-only capture remains disabled by default and cannot be enabled outside a development build.
 
 ## References
 
