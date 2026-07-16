@@ -35,6 +35,8 @@ Edge transfer rules:
 - The target monitor is selected by matching the edge direction and nearest overlapping span.
 - A small hysteresis band should prevent rapid bouncing when the pointer sits directly on an edge.
 - The first remote pointer position should be clamped inside the target monitor, not exactly on its outer edge.
+
+Milestone 3 models this in `apps/desktop/src/pointerEdgeModel.ts`. The detector is pure TypeScript over simulated pointer coordinates, layout rectangles, and the same trust gate used by the routing model. It can return a trusted target, a blocked target reason, or a local result, but it must not capture the real pointer, warp the cursor, inject input, or call network transport.
 - Blocked or untrusted targets cancel the transfer and keep the pointer local.
 - Pointer capture must not start while a modal permission prompt, pairing prompt, or settings dialog is active.
 
