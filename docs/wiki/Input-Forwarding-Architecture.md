@@ -93,6 +93,8 @@ Fallbacks:
 
 Milestone 2 exposes the Release Input command in the widget and tray as a safe stub before real input forwarding exists. The default shortcut above is documented for the future release gate, but no global hotkey should be registered until the read-only capture and release-all behavior are tested.
 
+Milestone 3 plans the future shortcut in `apps/desktop/src/emergencyShortcutGuard.ts`. The guard defines the platform accelerator and fallback behavior, but it returns `not-registered` by default and ignores the spike flag outside development builds. Even in development, it only allows a future prototype path; it does not register a shortcut, install a global keyboard hook, capture keys, suppress input, or replace the widget/tray Release Input commands.
+
 ## Permission Model
 
 Input capture and injection require explicit user-facing permission checks.

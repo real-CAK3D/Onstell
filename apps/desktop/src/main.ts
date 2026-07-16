@@ -7,6 +7,7 @@ import {
   scanFakeDiscovery,
   type DiscoverySnapshot
 } from "./discoveryService";
+import { emergencyShortcutGuard, type EmergencyShortcutGuard } from "./emergencyShortcutGuard";
 import { readOnlyCaptureGuard, type InputCaptureGuard } from "./inputCaptureGuard";
 import {
   availabilityLabel,
@@ -145,6 +146,7 @@ function render(
   profile: LayoutProfile,
   discovery: DiscoverySnapshot,
   inputCapture: InputCaptureGuard,
+  emergencyShortcut: EmergencyShortcutGuard,
   permissions: PermissionReadiness,
   loopback: LoopbackFollowerSnapshot
 ) {
@@ -225,7 +227,7 @@ function render(
             <button class="pill danger" type="button" data-reset-settings>Reset widget</button>
           </div>
 
-          ${renderReadinessPanel(status, inputCapture, permissions)}
+          ${renderReadinessPanel(status, inputCapture, emergencyShortcut, permissions)}
 
           ${renderDiscoveryPanel(discovery)}
 
@@ -278,10 +280,16 @@ function renderLoopbackPanel(loopback: LoopbackFollowerSnapshot) {
   `;
 }
 
-function renderReadinessPanel(status: OnstellStatus, inputCapture: InputCaptureGuard, permissions: PermissionReadiness) {
+function renderReadinessPanel(
+  status: OnstellStatus,
+  inputCapture: InputCaptureGuard,
+  emergencyShortcut: EmergencyShortcutGuard,
+  permissions: PermissionReadiness
+) {
   const items: Array<{ label: string; detail: string; state: ReadinessState }> = [
     { label: "Controller mode", detail: "Fixed local controller", state: "ready" },
     { label: "Input capture", detail: inputCapture.label, state: inputCapture.enabled ? "missing" : "design-only" },
+    { label: "Emergency shortcut", detail: `${emergencyShortcut.accelerator} - ${emergencyShortcut.status}`, state: emergencyShortcut.enabled ? "missing" : "design-only" },
     { label: permissions.capture.label, detail: permissionSummary(permissions.capture), state: readinessForPermission(permissions.capture.status) },
     { label: permissions.injection.label, detail: permissionSummary(permissions.injection), state: readinessForPermission(permissions.injection.status) },
     { label: "Clipboard", detail: status.clipboardSync, state: "design-only" },
@@ -570,35 +578,36 @@ function wireInteractions(
   status: OnstellStatus,
   discovery: DiscoverySnapshot,
   inputCapture: InputCaptureGuard,
+  emergencyShortcut: EmergencyShortcutGuard,
   permissions: PermissionReadiness,
   loopback: LoopbackFollowerSnapshot
 ) {
   const widget = document.querySelector<HTMLElement>(".widget")!;
   const desktop = document.querySelector<HTMLElement>(".desktop-shell")!;
   const rerenderWidget = async (menuOpen = true) => {
-    render(status, settings, profile, discovery, inputCapture, permissions, loopback);
+    render(status, settings, profile, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     applySettings(settings);
     await applyNativeLayer(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture, permissions, loopback);
+    wireInteractions(settings, profile, status, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = String(menuOpen);
   };
   const rerenderForLayoutChange = () => {
     saveLayoutProfile(profile);
-    render(status, settings, profile, discovery, inputCapture, permissions, loopback);
+    render(status, settings, profile, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture, permissions, loopback);
+    wireInteractions(settings, profile, status, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
   const rerenderForDiscoveryChange = () => {
-    render(status, settings, profile, discovery, inputCapture, permissions, loopback);
+    render(status, settings, profile, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture, permissions, loopback);
+    wireInteractions(settings, profile, status, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
   const rerenderForLoopbackChange = () => {
-    render(status, settings, profile, discovery, inputCapture, permissions, loopback);
+    render(status, settings, profile, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture, permissions, loopback);
+    wireInteractions(settings, profile, status, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   };
 
@@ -921,12 +930,13 @@ async function boot() {
   const discovery = createDiscoverySnapshot(profile);
   const inputCapture = readOnlyCaptureGuard(import.meta.env, import.meta.env.MODE);
   const permissions = createPermissionReadiness(detectCurrentPlatform());
+  const emergencyShortcut = emergencyShortcutGuard(import.meta.env, import.meta.env.MODE, permissions.platform);
   const loopback = createLoopbackFollowerSnapshot();
   const status = await getStatus();
-  render(status, settings, profile, discovery, inputCapture, permissions, loopback);
+  render(status, settings, profile, discovery, inputCapture, emergencyShortcut, permissions, loopback);
   applySettings(settings);
   await applyNativeLayer(settings);
-  wireInteractions(settings, profile, status, discovery, inputCapture, permissions, loopback);
+  wireInteractions(settings, profile, status, discovery, inputCapture, emergencyShortcut, permissions, loopback);
   void listen("onstell://open-settings", () => {
     document.querySelector<HTMLElement>(".widget")!.dataset.menuOpen = "true";
   });
@@ -934,9 +944,9 @@ async function boot() {
     status.inputReleased = true;
     status.routingStatus = "Released";
     Object.assign(loopback, dispatchLoopbackFollowerEvent(loopback, { type: "release", reason: "emergency-release" }, profile));
-    render(status, settings, profile, discovery, inputCapture, permissions, loopback);
+    render(status, settings, profile, discovery, inputCapture, emergencyShortcut, permissions, loopback);
     applySettings(settings);
-    wireInteractions(settings, profile, status, discovery, inputCapture, permissions, loopback);
+    wireInteractions(settings, profile, status, discovery, inputCapture, emergencyShortcut, permissions, loopback);
   });
 }
 
